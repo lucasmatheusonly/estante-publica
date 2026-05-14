@@ -56,7 +56,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -73,61 +73,79 @@
         const auth = getAuth(app);
         const estante = document.getElementById('estante-livros');
 
-        // Monitor de autenticação e Permissão de Admin
+        let usuarioAtual = null;
+
         onAuthStateChanged(auth, (user) => {
             const userInfo = document.getElementById('user-info');
             const adminLink = document.getElementById('admin-link');
-            // SUBSTITUA PELO SEU EMAIL REAL
             const meuEmail = "seu-email@gmail.com"; 
 
             if (user) {
+                usuarioAtual = user;
                 userInfo.innerHTML = `<span>Olá, ${user.displayName || 'Leitor'}</span>`;
-                if (user.email === meuEmail) { 
-                    adminLink.style.display = "block";
-                }
+                if (user.email === meuEmail) { adminLink.style.display = "block"; }
             } else {
+                usuarioAtual = null;
                 userInfo.innerHTML = `<a href="login.html">Entrar</a>`;
                 adminLink.style.display = "none";
             }
+            carregarLivros(); // Recarrega para mostrar o progresso do usuário logado
         });
 
-        // Carregamento da Estante em Tempo Real
-        onSnapshot(collection(db, "livros"), (snapshot) => {
-            if (estante) {
-                estante.innerHTML = "";
-                snapshot.forEach((doc) => {
-                    const livro = doc.data();
-                    const card = document.createElement('div');
-                    card.className = 'livro-card';
-// Guardamos os dados nos atributos para facilitar a busca rápida
-                    card.setAttribute('data-genero', (livro.genero || 'todos').toLowerCase());
-                    card.setAttribute('data-autor', (livro.autor || '').toLowerCase());
-                    card.setAttribute('data-titulo', (livro.titulo || '').toLowerCase());
+        function carregarLivros() {
+            onSnapshot(collection(db, "livros"), async (snapshot) => {
+if (estante) {
+                    estante.innerHTML = "";
                     
-                    card.onclick = () => {
-                        localStorage.setItem('tituloParaLer', livro.titulo);
-                        window.location.href = 'leitura.html';
-                    };
+                    // Usamos for...of para poder usar await dentro do loop
+                    for (const docLivro of snapshot.docs) {
+                        const livro = docLivro.data();
+                        const idLivro = docLivro.id;
+                        let progressoIndividual = 0;
 
-                    card.innerHTML = `
-                        <div class="capa-container">
-                            <img src="${livro.capa}" alt="${livro.titulo}">
-                        </div>
-                        <div class="livro-info">
-                            <h3>${livro.titulo}</h3>
-                            <p>${livro.autor}</p>
-                            <small style="color: #bc9585; text-transform: capitalize;">${livro.genero || ''}</small>
-                            <div class="barra-fundo">
-                                <div class="barra-progresso" style="width: ${livro.progresso || 0}%"></div>
+                        // Se houver usuário logado, busca o progresso dele para este livro
+                        if (usuarioAtual) {
+                            const q = query(
+                                collection(db, "usuarios_progresso"), 
+                                where("uid", "==", usuarioAtual.uid),
+                                where("livroId", "==", idLivro)
+                            );
+                            const snapProg = await getDocs(q);
+                            if (!snapProg.empty) {
+                                progressoIndividual = snapProg.docs[0].data().progresso || 0;
+                            }
+                        }
+
+                        const card = document.createElement('div');
+                        card.className = 'livro-card';
+                        card.setAttribute('data-genero', (livro.genero || 'todos').toLowerCase());
+                        card.setAttribute('data-autor', (livro.autor || '').toLowerCase());
+                        card.setAttribute('data-titulo', (livro.titulo || '').toLowerCase());
+                        
+                        card.onclick = () => {
+                            localStorage.setItem('tituloParaLer', livro.titulo);
+                            window.location.href = 'leitura.html';
+                        };
+
+                        card.innerHTML = `
+                            <div class="capa-container">
+                                <img src="${livro.capa}" alt="${livro.titulo}">
                             </div>
-                            <span style="font-size: 10px; color: #888;">${livro.progresso || 0}% lido</span>
-                        </div>`;
-                    estante.appendChild(card);
-                });
-            }
-        });
+                            <div class="livro-info">
+                                <h3>${livro.titulo}</h3>
+                                <p>${livro.autor}</p>
+                                <small style="color: #bc9585; text-transform: capitalize;">${livro.genero || ''}</small>
+                                <div class="barra-fundo">
+                                    <div class="barra-progresso" style="width: ${progressoIndividual}%"></div>
+                                </div>
+                                <span style="font-size: 10px; color: #888;">${progressoIndividual}% lido</span>
+                            </div>`;
+                        estante.appendChild(card);
+                    }
+                }
+            });
+        }
 
-        // FUNÇÃO DE BUSCA ATUALIZADA (Título, Autor e Gênero)
         window.filtrarLivros = function() {
             const termo = document.getElementById('input-pesquisa').value.toLowerCase().trim();
             const generoFiltro = document.getElementById('filtro-genero').value.toLowerCase();
@@ -140,11 +158,7 @@
                 const bateTexto = titulo.includes(termo) || autor.includes(termo);
                 const bateGenero = generoFiltro === "todos" || generoCard === generoFiltro;
 
-                if (bateTexto && bateGenero) {
-                    card.style.display = "flex";
-                } else {
-                    card.style.display = "none";
-                }
+                card.style.display = (bateTexto && bateGenero) ? "flex" : "none";
             });
         };
     </script>
