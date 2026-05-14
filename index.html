@@ -1,161 +1,180 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estante Pública - Início</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estante Pública - Início</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <div class="logo">Estante Pública</div>
-        <nav>
-            <ul>
-                <li><a href="index.html">Início</a></li>
-                <li id="user-info"><a href="login.html">Entrar</a></li>
-                <li id="admin-link" style="display: none;"><a href="admin.html" style="color: #bc9585; font-weight: bold;">+ Adicionar</a></li>
-            </ul>
-        </nav>
-    </header>
+<header>
+<div class="logo">Estante Pública</div>
+<nav>
+<ul>
+<li><a href="index.html">Início</a></li>
+<li id="user-info"><a href="login.html">Entrar</a></li>
+<li id="admin-link" style="display: none;"><a href="admin.html" style="color: #bc9585; font-weight: bold;">+ Adicionar</a></li>
+</ul>
+</nav>
+</header>
 
-    <main>
-        <section class="hero">
-            <div class="container">
-                <h1>Sua biblioteca, seu mundo.</h1>
-                <p>Leitura em qualquer lugar.</p>
-            </div>
-        </section>
+<main>
+<section class="hero">
+<div class="container">
+<h1>Sua biblioteca, seu mundo.</h1>
+<p>Leitura em qualquer lugar.</p>
+</div>
+</section>
 
-        <section class="container">
-            <div class="controles-biblioteca">
-                <input type="text" id="input-pesquisa" placeholder="Pesquisar título ou autor..." onkeyup="filtrarLivros()">
-                <select id="filtro-genero" onchange="filtrarLivros()">
-                    <option value="todos">Todos os Gêneros</option>
-                    <option value="romance">Romance</option>
-                    <option value="ficcao">Ficção</option>
-                    <option value="fantasia">Fantasia</option>
-                    <option value="misterio">Mistério</option>
-                    <option value="terror">Terror</option>
-                    <option value="nacionais">Nacionais</option>
-                    <option value="estrangeiros">Estrangeiros</option>
-                    <option value="suspense">Suspense</option>
-                    <option value="biografia">Biografia</option>
-                </select>
-            </div>
-        </section>
+<section class="container">
+<div class="controles-biblioteca">
+<input type="text" id="input-pesquisa" placeholder="Pesquisar título ou autor..." onkeyup="filtrarLivros()">
+<select id="filtro-genero" onchange="filtrarLivros()">
+<option value="todos">Todos os Gêneros</option>
+<option value="romance">Romance</option>
+<option value="ficcao">Ficção</option>
+<option value="fantasia">Fantasia</option>
+<option value="misterio">Mistério</option>
+<option value="terror">Terror</option>
+<option value="nacionais">Nacionais</option>
+<option value="estrangeiros">Estrangeiros</option>
+<option value="suspense">Suspense</option>
+<option value="biografia">Biografia</option>
+</select>
+</div>
+</section>
 
-        <section class="estante-privada">
-            <div class="container">
-                <h2>Minha Estante</h2>
-                <div class="grade-livros" id="estante-livros">
-                    <p style="text-align: center; width: 100%;">Carregando estante...</p>
-                </div>
-            </div>
-        </section>
-    </main>
+<section class="estante-privada">
+<div class="container">
+<h2>Minha Estante</h2>
+<div class="grade-livros" id="estante-livros">
+<p style="text-align: center; width: 100%;">Carregando estante...</p>
+</div>
+</div>
+</section>
+</main>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, query, where, getDocs, doc, setDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyA_dfKpa7zNWkN4PANH0QTfqzj9j9Gujm0",
-            authDomain: "estante-publica.firebaseapp.com",
-            projectId: "estante-publica",
-            storageBucket: "estante-publica.firebasestorage.app",
-            messagingSenderId: "190769635660",
-            appId: "1:190769635660:web:1474f27911f45dbd17efe9"
-        };
+const firebaseConfig = {
+apiKey: "AIzaSyA_dfKpa7zNWkN4PANH0QTfqzj9j9Gujm0",
+authDomain: "estante-publica.firebaseapp.com",
+projectId: "estante-publica",
+storageBucket: "estante-publica.firebasestorage.app",
+messagingSenderId: "190769635660",
+appId: "1:190769635660:web:1474f27911f45dbd17efe9"
+};
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const estante = document.getElementById('estante-livros');
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const estante = document.getElementById('estante-livros');
 
-        let usuarioAtual = null;
+let usuarioAtual = null;
 
-        onAuthStateChanged(auth, (user) => {
-            const userInfo = document.getElementById('user-info');
-            const adminLink = document.getElementById('admin-link');
-            const meuEmail = "lumatheus.trabalho@gmail.com"; // AJUSTE PARA O SEU E-MAIL REAL
+// Função de Sair
+window.fazerLogout = function() {
+signOut(auth).then(() => {
+window.location.reload();
+}).catch((error) => {
+console.error("Erro ao sair:", error);
+});
+};
 
-            if (user) {
-                usuarioAtual = user;
-                userInfo.innerHTML = `<span>Olá, ${user.displayName || 'Leitor'}</span>`;
-                if (user.email === meuEmail) { adminLink.style.display = "block"; }
-            } else {
-                usuarioAtual = null;
-                userInfo.innerHTML = `<a href="login.html">Entrar</a>`;
-                adminLink.style.display = "none";
-            }
-            carregarLivros(); 
-        });
+onAuthStateChanged(auth, (user) => {
+const userInfo = document.getElementById('user-info');
+const adminLink = document.getElementById('admin-link');
+const meuEmail = "lumatheus.trabalho@gmail.com";
 
-        async function carregarLivros() {
-            onSnapshot(collection(db, "livros"), async (snapshot) => {
+if (user) {
+usuarioAtual = user;
+// Exibe nome e botão de sair
+userInfo.innerHTML = `
+<span style="color: white; font-size: 14px; margin-right: 10px;">Olá, ${user.displayName.split(' ')[0]}</span>
+<a href="#" onclick="fazerLogout()" style="color: #bc9585; font-size: 12px;">(Sair)</a>
+`;
+
+// Trava de Admin
+if (user.email === meuEmail) {
+adminLink.style.display = "inline-block";
+} else {
+adminLink.style.display = "none";
+}
+} else {
+usuarioAtual = null;
+userInfo.innerHTML = `<a href="login.html">Entrar</a>`;
+adminLink.style.display = "none";
+}
+carregarLivros();
+});
+
+async function carregarLivros() {
+onSnapshot(collection(db, "livros"), async (snapshot) => {
 if (estante) {
-                    estante.innerHTML = "";
-                    for (const docLivro of snapshot.docs) {
-                        const livro = docLivro.data();
-                        const idLivro = docLivro.id;
-                        let progressoIndividual = 0;
+estante.innerHTML = "";
+for (const docLivro of snapshot.docs) {
+const livro = docLivro.data();
+const idLivro = docLivro.id;
+let progressoIndividual = 0;
 
-                        try {
-                            if (usuarioAtual) {
-                                const q = query(
-                                    collection(db, "usuarios_progresso"), 
-                                    where("uid", "==", usuarioAtual.uid),
-                                    where("livroId", "==", idLivro)
-                                );
-                                const snapProg = await getDocs(q);
-                                if (!snapProg.empty) {
-                                    progressoIndividual = snapProg.docs[0].data().progresso || 0;
-                                }
-                            }
-                        } catch (e) {
-                            console.error("Erro ao carregar progresso:", e);
-                        }
+try {
+if (usuarioAtual) {
+const q = query(
+collection(db, "usuarios_progresso"),
+where("uid", "==", usuarioAtual.uid),
+where("livroId", "==", idLivro)
+);
+const snapProg = await getDocs(q);
+if (!snapProg.empty) {
+progressoIndividual = snapProg.docs[0].data().progresso || 0;
+}
+}
+} catch (e) {
+console.error("Erro ao carregar progresso:", e);
+}
 
-                        const card = document.createElement('div');
-                        card.className = 'livro-card';
-                        card.setAttribute('data-genero', (livro.genero || 'todos').toLowerCase());
-                        card.setAttribute('data-autor', (livro.autor || '').toLowerCase());
-                        card.setAttribute('data-titulo', (livro.titulo || '').toLowerCase());
-                        
-                        card.onclick = () => {
-                            localStorage.setItem('tituloParaLer', livro.titulo);
-                            window.location.href = 'leitura.html';
-                        };
+const card = document.createElement('div');
+card.className = 'livro-card';
+card.setAttribute('data-genero', (livro.genero || 'todos').toLowerCase());
+card.setAttribute('data-autor', (livro.autor || '').toLowerCase());
+card.setAttribute('data-titulo', (livro.titulo || '').toLowerCase());
 
-                        card.innerHTML = `
-                            <div class="capa-container">
-                                <img src="${livro.capa}" alt="${livro.titulo}">
-                            </div>
-                            <div class="livro-info">
-                                <h3>${livro.titulo}</h3>
-                                <p>${livro.autor}</p>
-                                <small style="color: #bc9585; text-transform: capitalize;">${livro.genero || ''}</small>
-                                <div class="barra-fundo">
-                                    <div class="barra-progresso" style="width: ${progressoIndividual}%"></div>
-                                </div>
-                                <span style="font-size: 10px; color: #888;">${progressoIndividual}% lido</span>
-                            </div>`;
-                        estante.appendChild(card);
-                    }
-                }
-            });
-        }
+card.onclick = () => {
+localStorage.setItem('tituloParaLer', livro.titulo);
+window.location.href = 'leitura.html';
+};
 
-        window.filtrarLivros = function() {
-            const termo = document.getElementById('input-pesquisa').value.toLowerCase().trim();
-            const generoFiltro = document.getElementById('filtro-genero').value.toLowerCase();
-            document.querySelectorAll('.livro-card').forEach(card => {
-                const bateTexto = card.getAttribute('data-titulo').includes(termo) || card.getAttribute('data-autor').includes(termo);
-                const bateGenero = generoFiltro === "todos" || card.getAttribute('data-genero') === generoFiltro;
-                card.style.display = (bateTexto && bateGenero) ? "flex" : "none";
-            });
-        };
-    </script>
+card.innerHTML = `
+<div class="capa-container">
+<img src="${livro.capa}" alt="${livro.titulo}">
+</div>
+<div class="livro-info">
+<h3>${livro.titulo}</h3>
+<p>${livro.autor}</p>
+<small style="color: #bc9585; text-transform: capitalize;">${livro.genero || ''}</small>
+<div class="barra-fundo">
+<div class="barra-progresso" style="width: ${progressoIndividual}%"></div>
+</div>
+<span style="font-size: 10px; color: #888;">${progressoIndividual}% lido</span>
+</div>`;
+estante.appendChild(card);
+}
+}
+});
+}
+
+window.filtrarLivros = function() {
+const termo = document.getElementById('input-pesquisa').value.toLowerCase().trim();
+const generoFiltro = document.getElementById('filtro-genero').value.toLowerCase();
+document.querySelectorAll('.livro-card').forEach(card => {
+const bateTexto = card.getAttribute('data-titulo').includes(termo) || card.getAttribute('data-autor').includes(termo);
+const bateGenero = generoFiltro === "todos" || card.getAttribute('data-genero') === generoFiltro;
+card.style.display = (bateTexto && bateGenero) ? "flex" : "none";
+});
+};
+</script>
 </body>
 </html>

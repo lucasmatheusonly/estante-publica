@@ -34,7 +34,8 @@ export const logout = async () => {
 try {
 await signOut(auth);
 console.log("Usuário saiu.");
-window.location.href = "index.html"; // Alterado para index para não prender o usuário no login
+// Recarrega a página atual para atualizar os menus
+window.location.href = "index.html";
 } catch (error) {
 console.error("Erro ao sair:", error.message);
 }
@@ -42,25 +43,37 @@ console.error("Erro ao sair:", error.message);
 
 // MONITOR: Verifica quem está logado e controla o acesso
 onAuthStateChanged(auth, (user) => {
-const btnAdmin = document.getElementById('btn-admin'); // Botão "+ Adicionar" no index.html
-const userEmail = "lumatheus.trabalho@gmail.com"; // SEU E-MAIL
+const btnAdmin = document.getElementById('admin-link'); // ID atualizado para bater com seu index
+const userInfo = document.getElementById('user-info');
+const userEmailAdmin = "lumatheus.trabalho@gmail.com";
 
 if (user) {
 console.log("Logado como: " + user.email);
 
 // Se o e-mail logado for o seu, o botão de admin aparece
-if (user.email === userEmail && btnAdmin) {
+if (user.email === userEmailAdmin && btnAdmin) {
 btnAdmin.style.display = "block";
-} else if (btnAdmin) {
-btnAdmin.style.display = "none";
+}
+
+// Atualiza a interface se os elementos existirem na página
+if (userInfo) {
+userInfo.innerHTML = `
+<span style="color: white; font-size: 14px; margin-right: 10px;">Olá, ${user.displayName.split(' ')[0]}</span>
+<a href="#" id="btn-logout-auth" style="color: #bc9585; font-size: 12px;">(Sair)</a>
+`;
+
+// Adiciona o evento de clique ao botão de sair
+document.getElementById('btn-logout-auth')?.addEventListener('click', (e) => {
+e.preventDefault();
+logout();
+});
 }
 } else {
-// Se ninguém estiver logado, apenas garantimos que o admin não apareça
-// mas NÃO redirecionamos para o login, permitindo a navegação livre.
 console.log("Nenhum usuário logado (Modo Visitante).");
 if (btnAdmin) btnAdmin.style.display = "none";
+if (userInfo) userInfo.innerHTML = `<a href="login.html">Entrar</a>`;
 
-// Se o usuário tentar entrar na página admin.html sem estar logado:
+// Bloqueia acesso direto à página de admin se não estiver logado
 if (window.location.pathname.includes("admin.html")) {
 window.location.href = "login.html";
 }
