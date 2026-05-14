@@ -13,7 +13,7 @@
             <ul>
                 <li><a href="index.html">Início</a></li>
                 <li id="user-info"><a href="login.html">Entrar</a></li>
-                <li id="admin-link" style="display: none;"><a href="admin.html" style="color: #bc9585;">+ Adicionar</a></li>
+                <li id="admin-link" style="display: none;"><a href="admin.html" style="color: #bc9585; font-weight: bold;">+ Adicionar</a></li>
             </ul>
         </nav>
     </header>
@@ -69,16 +69,25 @@
         const auth = getAuth(app);
         const estante = document.getElementById('estante-livros');
 
+        // Monitor de autenticação e Permissão de Admin
         onAuthStateChanged(auth, (user) => {
             const userInfo = document.getElementById('user-info');
             const adminLink = document.getElementById('admin-link');
+            // SUBSTITUA PELO SEU EMAIL REAL
+            const meuEmail = "seu-email@gmail.com"; 
+
             if (user) {
-                // CORREÇÃO DA LINHA 85: Adicionado crases corretamente
-                userInfo.innerHTML = `<span>Olá, ${user.displayName || 'Leitor'}</span>`;
-                if (user.email === "seu-email@gmail.com") { adminLink.style.display = "block"; }
+                userInfo.innerHTML = <span>Olá, ${user.displayName || 'Leitor'}</span>;
+                if (user.email === meuEmail) { 
+                    adminLink.style.display = "block"; 
+                }
+            } else {
+                userInfo.innerHTML = <a href="login.html">Entrar</a>;
+                adminLink.style.display = "none";
             }
         });
 
+        // Carregamento da Estante em Tempo Real
         onSnapshot(collection(db, "livros"), (snapshot) => {
             if (estante) {
                 estante.innerHTML = "";
@@ -86,22 +95,24 @@
                     const livro = doc.data();
                     const card = document.createElement('div');
                     card.className = 'livro-card';
+// Guardamos os dados nos atributos para facilitar a busca rápida
                     card.setAttribute('data-genero', (livro.genero || 'todos').toLowerCase());
+                    card.setAttribute('data-autor', (livro.autor || '').toLowerCase());
+                    card.setAttribute('data-titulo', (livro.titulo || '').toLowerCase());
                     
                     card.onclick = () => {
                         localStorage.setItem('tituloParaLer', livro.titulo);
                         window.location.href = 'leitura.html';
                     };
 
-                    // CORREÇÃO DA LINHA 106: Fechamento de template literal
-card.innerHTML = `
+                    card.innerHTML = `
                         <div class="capa-container">
                             <img src="${livro.capa}" alt="${livro.titulo}">
                         </div>
                         <div class="livro-info">
                             <h3>${livro.titulo}</h3>
                             <p>${livro.autor}</p>
-                            <small style="color: #bc9585">${livro.genero || ''}</small>
+                            <small style="color: #bc9585; text-transform: capitalize;">${livro.genero || ''}</small>
                             <div class="barra-fundo">
                                 <div class="barra-progresso" style="width: ${livro.progresso || 0}%"></div>
                             </div>
@@ -112,14 +123,24 @@ card.innerHTML = `
             }
         });
 
+        // FUNÇÃO DE BUSCA ATUALIZADA (Título, Autor e Gênero)
         window.filtrarLivros = function() {
-            const termo = document.getElementById('input-pesquisa').value.toLowerCase();
-            const genero = document.getElementById('filtro-genero').value.toLowerCase();
+            const termo = document.getElementById('input-pesquisa').value.toLowerCase().trim();
+            const generoFiltro = document.getElementById('filtro-genero').value.toLowerCase();
+            
             document.querySelectorAll('.livro-card').forEach(card => {
-                const titulo = card.querySelector('h3').innerText.toLowerCase();
-                const bateTexto = titulo.includes(termo);
-                const bateGenero = genero === "todos" || card.getAttribute('data-genero') === genero;
-                card.style.display = (bateTexto && bateGenero) ? "flex" : "none";
+                const titulo = card.getAttribute('data-titulo');
+                const autor = card.getAttribute('data-autor');
+                const generoCard = card.getAttribute('data-genero');
+
+                const bateTexto = titulo.includes(termo) || autor.includes(termo);
+                const bateGenero = generoFiltro === "todos" || generoCard === generoFiltro;
+
+                if (bateTexto && bateGenero) {
+                    card.style.display = "flex";
+                } else {
+                    card.style.display = "none";
+                }
             });
         };
     </script>

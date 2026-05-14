@@ -5,22 +5,36 @@
     <title>Admin - Adicionar Livro</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .admin-form { max-width: 400px; margin: 50px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .admin-form input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; }
-        .btn-add { width: 100%; padding: 12px; background: #4a2c2a; color: white; border: none; cursor: pointer; font-weight: bold; }
+        .admin-form { max-width: 500px; margin: 50px auto; padding: 30px; background: white; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .admin-form input, .admin-form select, .admin-form textarea { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-family: sans-serif; }
+        .admin-form textarea { height: 150px; resize: vertical; }
+        .btn-add { width: 100%; padding: 15px; background: #4a2c2a; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 4px; font-size: 16px; }
+        .btn-add:hover { background: #5d3a37; }
     </style>
 </head>
 <body style="background-color: #f4f1ea;">
     <div class="admin-form">
-        <h2 style="text-align: center;">Cadastrar Livro</h2>
+        <h2 style="text-align: center; color: #45322e;">Cadastrar Novo Livro</h2>
         <form id="form-livro">
             <input type="text" id="titulo" placeholder="Título do Livro" required>
             <input type="text" id="autor" placeholder="Autor" required>
-            <input type="text" id="capa" placeholder="Caminho da Capa (Ex: biblioteca_pessoal/capa.jpg)" required>
-            <input type="text" id="arquivo" placeholder="Caminho do Arquivo (Ex: biblioteca_pessoal/livro.epub)" required>
+            
+            <select id="genero" required>
+                <option value="" disabled selected>Selecione o Gênero</option>
+                <option value="romance">Romance</option>
+                <option value="ficcao">Ficção</option>
+                <option value="fantasia">Fantasia</option>
+                <option value="misterio">Mistério</option>
+                <option value="terror">Terror</option>
+            </select>
+
+            <input type="text" id="capa" placeholder="Link da imagem da capa" required>
+            
+            <textarea id="conteudo" placeholder="Cole aqui o texto completo do livro para leitura..." required></textarea>
+
             <button type="submit" class="btn-add">SALVAR NA ESTANTE</button>
         </form>
-        <p style="text-align: center; margin-top: 15px;"><a href="index.html" style="color: #666;">Voltar ao Início</a></p>
+        <p style="text-align: center; margin-top: 15px;"><a href="index.html" style="color: #666; text-decoration: none;">← Voltar ao Início</a></p>
     </div>
 
     <script type="module">
@@ -41,17 +55,30 @@
 
         document.getElementById('form-livro').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // Pegando os valores dos campos
+            const titulo = document.getElementById('titulo').value;
+            const autor = document.getElementById('autor').value;
+            const genero = document.getElementById('genero').value;
+            const capa = document.getElementById('capa').value;
+            const conteudo = document.getElementById('conteudo').value;
+
             try {
                 await addDoc(collection(db, "livros"), {
-                    titulo: document.getElementById('titulo').value,
-                    autor: document.getElementById('autor').value,
-                    capa: document.getElementById('capa').value,
-                    arquivo: document.getElementById('arquivo').value,
+                    titulo: titulo,
+                    autor: autor,
+                    genero: genero,
+                    capa: capa,
+                    conteudo: conteudo, // O texto do livro
+                    progresso: 0,       // Começa com 0%
                     data: new Date()
                 });
-                alert("Livro adicionado com sucesso!");
+                
+                alert("Livro '" + titulo + "' adicionado com sucesso!");
                 e.target.reset();
-            } catch (err) { alert("Erro ao salvar: " + err.message); }
+            } catch (err) { 
+                alert("Erro ao salvar: " + err.message); 
+            }
         });
     </script>
 </body>

@@ -6,7 +6,8 @@
     <title>Login - Estante Pública</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="tela-login"> <div class="login-card">
+<body class="tela-login"> 
+    <div class="login-card">
         <h1 class="logo-login">Estante Pública</h1>
         <h2>Bem-vindo de volta!</h2>
         <p>Escolha como deseja entrar:</p>
@@ -32,7 +33,34 @@
     </div>
 
     <script type="module">
-        // Seu código de autenticação do Firebase continua aqui embaixo...
+        // Importamos as funções que você já tem no auth.js
+        import { loginGoogle } from "./auth.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const auth = getAuth();
+
+        // 1. Ação do Botão do Google
+        document.getElementById('btn-google').addEventListener('click', () => {
+            loginGoogle(); 
+        });
+
+        // 2. Ação do Login por E-mail (Opcional, conforme seu formulário)
+        document.getElementById('btn-login-email').addEventListener('click', async () => {
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('password').value;
+
+            if (!email || !senha) {
+                alert("Por favor, preencha todos os campos.");
+                return;
+            }
+
+            try {
+                await signInWithEmailAndPassword(auth, email, senha);
+                window.location.href = "index.html"; // Vai para a estante se der certo
+            } catch (error) {
+                alert("Erro ao entrar: " + error.message);
+            }
+        });
     </script>
 </body>
 </html>

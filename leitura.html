@@ -7,39 +7,82 @@
     <link rel="stylesheet" href="style.css">
     <style>
         body { background-color: #221f20; margin: 0; display: flex; }
-        .guia-marcacoes { width: 300px; background-color: #45322e; color: white; height: 100vh; padding: 20px; overflow-y: auto; border-right: 2px solid #bc9585; position: fixed; left: 0; }
-        .folha-leitura { background-color: #f4ecd8; flex-grow: 1; max-width: 800px; min-height: 100vh; padding: 60px 80px; margin-left: 300px; margin-right: auto; box-shadow: 0 0 50px rgba(0,0,0,0.5); font-family: 'Georgia', serif; line-height: 1.8; position: relative; }
+        
+        /* Ajuste do Guia Lateral para ser fixo e não sumir */
+        .guia-marcacoes { 
+            width: 300px; 
+            background-color: #45322e; 
+            color: white; 
+            height: 100vh; 
+            padding: 20px; 
+            overflow-y: auto; 
+            border-right: 2px solid #bc9585; 
+            position: fixed; 
+            left: 0; 
+            top: 0;
+            box-sizing: border-box;
+        }
+
+        /* Ajuste da Folha para respeitar o espaço do guia */
+        .folha-leitura { 
+            background-color: #f4ecd8; 
+            flex-grow: 1; 
+            max-width: 800px; 
+            min-height: 100vh; 
+            padding: 80px 60px; 
+            margin-left: 300px; /* Alinhado ao guia */
+            margin-right: auto; 
+            box-shadow: 0 0 50px rgba(0,0,0,0.5); 
+            font-family: 'Georgia', serif; 
+            line-height: 1.8; 
+            position: relative; 
+        }
+
         .texto-conteudo { text-align: justify; color: #45322e; white-space: pre-wrap; font-size: 18px; }
-        .grifado { background-color: #bc958599; border-bottom: 2px solid #834d40; }
-        #menu-ferramentas { position: absolute; display: none; background: #45322e; padding: 8px; border-radius: 8px; z-index: 100; }
+        
+        /* Grifos com transparência para não cobrir o texto */
+        .grifado { background-color: rgba(188, 149, 133, 0.5); border-bottom: 2px solid #834d40; }
+
+        .item-guia {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            border-left: 3px solid #bc9585;
+        }
+        
+        #menu-ferramentas { position: absolute; display: none; background: #45322e; padding: 8px; border-radius: 8px; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
         #menu-ferramentas button { background: #bc9585; border: none; padding: 5px 12px; cursor: pointer; border-radius: 4px; color: white; margin: 0 2px; font-weight: bold; }
         
-        /* Barra visual de progresso no topo */
-        .progresso-container { position: fixed; top: 0; left: 300px; width: calc(100% - 300px); height: 5px; background: transparent; z-index: 1000; }
-        .progresso-barra { height: 100%; background: #834d40; width: 0%; transition: width 0.2s; }
+        /* Barra visual de progresso no topo (Cor Terracota) */
+        .progresso-container { position: fixed; top: 0; left: 300px; width: calc(100% - 300px); height: 5px; background: rgba(0,0,0,0.05); z-index: 1000; }
+        .progresso-barra { height: 100%; background: #834d40; width: 0%; transition: width 0.2s ease-out; }
     </style>
 </head>
 <body>
     <div class="progresso-container"><div class="progresso-barra" id="barra-topo"></div></div>
 
     <div class="guia-marcacoes">
-        <h3>📖 Marcações</h3>
-        <div id="lista-marcacoes"></div>
+        <h3 style="color: #bc9585;">📖 Marcações</h3>
+        <div id="lista-marcacoes">
+            <p style="font-size: 12px; color: #888;">Nenhuma nota ainda.</p>
+        </div>
     </div>
 
     <div class="folha-leitura">
         <header>
-            <a href="index.html" style="text-decoration: none; color: #834d40; font-weight: bold;">← Voltar</a>
-            <h1 id="titulo-livro" style="font-size: 26px; color: #45322e; margin: 10px 0;">Carregando...</h1>
-            <p id="status-progresso" style="font-size: 12px; color: #834d40;">Progresso: 0%</p>
+            <a href="index.html" style="text-decoration: none; color: #834d40; font-weight: bold;">← Voltar à Estante</a>
+            <h1 id="titulo-livro" style="font-size: 26px; color: #45322e; margin: 15px 0;">Carregando...</h1>
+            <p id="status-progresso" style="font-size: 13px; color: #834d40; font-weight: bold;">Lido: 0%</p>
         </header>
 
         <div id="menu-ferramentas">
             <button onclick="salvarMarcacao('grifo')">Grifar</button>
-            <button onclick="salvarMarcacao('comentario')">💬</button>
+            <button onclick="salvarMarcacao('comentario')">💬 Nota</button>
         </div>
 
-        <div class="texto-conteudo" id="area-texto">Carregando conteúdo...</div>
+        <div class="texto-conteudo" id="area-texto">Buscando seu livro...</div>
     </div>
 
     <script type="module">
@@ -51,7 +94,7 @@
             authDomain: "estante-publica.firebaseapp.com",
             projectId: "estante-publica",
             storageBucket: "estante-publica.firebasestorage.app",
-            messagingSenderId: "190769635660",
+messagingSenderId: "190769635660",
             appId: "1:190769635660:web:1474f27911f45dbd17efe9"
         };
 
@@ -72,36 +115,43 @@
             
             if (!snap.empty) {
                 const dados = snap.docs[0].data();
-                areaTexto.innerText = dados.conteudo || "Texto não encontrado.";
+                areaTexto.innerText = dados.conteudo || "O conteúdo deste livro ainda não foi cadastrado.";
                 ultimoProgressoSalvo = dados.progresso || 0;
 
                 if (dados.marcacoes) {
-listaGuia.innerHTML = "";
-                    let htmlTemporario = areaTexto.innerHTML;
+                    listaGuia.innerHTML = "";
+                    let htmlTemporario = areaTexto.innerText; // Usamos innerText para evitar bugs de HTML pré-existente
+
                     dados.marcacoes.forEach(m => {
+                        // Adiciona ao guia lateral
                         const item = document.createElement('div');
                         item.className = 'item-guia';
-                        item.innerHTML = '<strong>' + m.tipo.toUpperCase() + '</strong><br>"' + m.texto.substring(0, 30) + '..."';
+                        item.innerHTML = '<strong>' + m.tipo.toUpperCase() + '</strong><br>"' + m.texto.substring(0, 40) + '..."';
                         listaGuia.appendChild(item);
-                        htmlTemporario = htmlTemporario.replace(m.texto, '<span class="grifado">' + m.texto + '</span>');
+                        
+                        // Aplica o grifo no texto de forma segura (sem erro de aspas/crases)
+                        const tagGrifo = '<span class="grifado">' + m.texto + '</span>';
+                        htmlTemporario = htmlTemporario.split(m.texto).join(tagGrifo);
                     });
                     areaTexto.innerHTML = htmlTemporario;
                 }
             }
         }
 
-        // --- LÓGICA DE PROGRESSO AUTOMÁTICO ---
+        // --- PROGRESSO AUTOMÁTICO AO ROLAR ---
         window.onscroll = function() {
             const totalAltura = document.documentElement.scrollHeight - window.innerHeight;
+            if (totalAltura <= 0) return;
+
             const posicaoAtual = window.scrollY;
             const porcentagem = Math.round((posicaoAtual / totalAltura) * 100);
             
-            // Atualiza a barra visual
+            // Atualiza interface visual
             document.getElementById('barra-topo').style.width = porcentagem + "%";
-            document.getElementById('status-progresso').innerText = "Progresso: " + porcentagem + "%";
+            document.getElementById('status-progresso').innerText = "Lido: " + porcentagem + "%";
 
-            // Salva no Firebase apenas se subiu mais de 5% (para não sobrecarregar o banco)
-            if (porcentagem > ultimoProgressoSalvo + 5 || porcentagem === 100) {
+            // Salva no banco a cada 5% de avanço ou se chegar ao fim
+            if (porcentagem >= ultimoProgressoSalvo + 5 || (porcentagem === 100 && ultimoProgressoSalvo < 100)) {
                 salvarProgressoAutomatico(porcentagem);
             }
         };
@@ -113,32 +163,38 @@ listaGuia.innerHTML = "";
                 const ref = doc(db, "livros", snap.docs[0].id);
                 await updateDoc(ref, { progresso: valor });
                 ultimoProgressoSalvo = valor;
-                console.log("Progresso de " + valor + "% salvo automaticamente.");
             }
         }
 
         window.salvarMarcacao = async function(tipo) {
             const selecao = window.getSelection().toString().trim();
             if (!selecao) return;
-            const nota = tipo === 'comentario' ? prompt("Nota:") : "";
+            const nota = tipo === 'comentario' ? prompt("Escreva sua nota:") : "";
+            
             const q = query(collection(db, "livros"), where("titulo", "==", tituloSalvo));
             const snap = await getDocs(q);
             if (!snap.empty) {
                 const ref = doc(db, "livros", snap.docs[0].id);
-                await updateDoc(ref, { marcacoes: arrayUnion({ texto: selecao, tipo: tipo, nota: nota }) });
+                await updateDoc(ref, { 
+                    marcacoes: arrayUnion({ texto: selecao, tipo: tipo, nota: nota }) 
+                });
                 location.reload();
             }
         };
 
         carregarLivro();
 
-        document.addEventListener('mouseup', (e) => {
+        // Menu de ferramentas para grifar
+document.addEventListener('mouseup', (e) => {
             const menu = document.getElementById('menu-ferramentas');
-            if (window.getSelection().toString().length > 0) {
+            const selecao = window.getSelection().toString();
+            if (selecao.length > 0) {
                 menu.style.display = "block";
                 menu.style.left = e.pageX + "px";
-                menu.style.top = (e.pageY - 50) + "px";
-            } else { menu.style.display = "none"; }
+                menu.style.top = (e.pageY - 60) + "px";
+            } else { 
+                menu.style.display = "none"; 
+            }
         });
     </script>
 </body>
