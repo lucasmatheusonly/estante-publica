@@ -81,9 +81,9 @@
             const meuEmail = "seu-email@gmail.com"; 
 
             if (user) {
-                userInfo.innerHTML = <span>Olá, ${user.displayName || 'Leitor'}</span>;
+                userInfo.innerHTML = `<span>Olá, ${user.displayName || 'Leitor'}</span>`;
                 if (user.email === meuEmail) { 
-                    adminLink.style.display = "block"; 
+                    adminLink.style.display = "block";
                 }
             } else {
                 userInfo.innerHTML = <a href="login.html">Entrar</a>;
