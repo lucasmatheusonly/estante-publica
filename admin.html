@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Adicionar Livro</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-form { max-width: 400px; margin: 50px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .admin-form input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; }
+        .btn-add { width: 100%; padding: 12px; background: #4a2c2a; color: white; border: none; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body style="background-color: #f4f1ea;">
+    <div class="admin-form">
+        <h2 style="text-align: center;">Cadastrar Livro</h2>
+        <form id="form-livro">
+            <input type="text" id="titulo" placeholder="Título do Livro" required>
+            <input type="text" id="autor" placeholder="Autor" required>
+            <input type="text" id="capa" placeholder="Caminho da Capa (Ex: biblioteca_pessoal/capa.jpg)" required>
+            <input type="text" id="arquivo" placeholder="Caminho do Arquivo (Ex: biblioteca_pessoal/livro.epub)" required>
+            <button type="submit" class="btn-add">SALVAR NA ESTANTE</button>
+        </form>
+        <p style="text-align: center; margin-top: 15px;"><a href="index.html" style="color: #666;">Voltar ao Início</a></p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA_dfKpa7zNWkN4PANH0QTfqzj9j9Gujm0",
+            authDomain: "estante-publica.firebaseapp.com",
+            projectId: "estante-publica",
+            storageBucket: "estante-publica.firebasestorage.app",
+            messagingSenderId: "190769635660",
+            appId: "1:190769635660:web:1474f27911f45dbd17efe9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        document.getElementById('form-livro').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                await addDoc(collection(db, "livros"), {
+                    titulo: document.getElementById('titulo').value,
+                    autor: document.getElementById('autor').value,
+                    capa: document.getElementById('capa').value,
+                    arquivo: document.getElementById('arquivo').value,
+                    data: new Date()
+                });
+                alert("Livro adicionado com sucesso!");
+                e.target.reset();
+            } catch (err) { alert("Erro ao salvar: " + err.message); }
+        });
+    </script>
+</body>
+</html>

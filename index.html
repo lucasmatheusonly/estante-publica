@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estante Pública - Início</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="logo">Estante Pública</div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Início</a></li>
+                <li id="user-info"><a href="login.html">Entrar</a></li>
+                <li id="admin-link" style="display: none;"><a href="admin.html" style="color: #bc9585;">+ Adicionar</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h1>Sua biblioteca, seu mundo.</h1>
+                <p>Leitura em qualquer lugar.</p>
+            </div>
+        </section>
+
+        <section class="container">
+            <div class="controles-biblioteca">
+                <input type="text" id="input-pesquisa" placeholder="Pesquisar título ou autor..." onkeyup="filtrarLivros()">
+                <select id="filtro-genero" onchange="filtrarLivros()">
+                    <option value="todos">Todos os Gêneros</option>
+                    <option value="romance">Romance</option>
+                    <option value="ficcao">Ficção</option>
+                    <option value="fantasia">Fantasia</option>
+                    <option value="misterio">Mistério</option>
+                    <option value="terror">Terror</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="estante-privada">
+            <div class="container">
+                <h2>Minha Estante</h2>
+                <div class="grade-livros" id="estante-livros">
+                    <p style="text-align: center; width: 100%;">Carregando estante...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA_dfKpa7zNWkN4PANH0QTfqzj9j9Gujm0",
+            authDomain: "estante-publica.firebaseapp.com",
+            projectId: "estante-publica",
+            storageBucket: "estante-publica.firebasestorage.app",
+            messagingSenderId: "190769635660",
+            appId: "1:190769635660:web:1474f27911f45dbd17efe9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const estante = document.getElementById('estante-livros');
+
+        onAuthStateChanged(auth, (user) => {
+            const userInfo = document.getElementById('user-info');
+            const adminLink = document.getElementById('admin-link');
+            if (user) {
+                // CORREÇÃO DA LINHA 85: Adicionado crases corretamente
+                userInfo.innerHTML = `<span>Olá, ${user.displayName || 'Leitor'}</span>`;
+                if (user.email === "seu-email@gmail.com") { adminLink.style.display = "block"; }
+            }
+        });
+
+        onSnapshot(collection(db, "livros"), (snapshot) => {
+            if (estante) {
+                estante.innerHTML = "";
+                snapshot.forEach((doc) => {
+                    const livro = doc.data();
+                    const card = document.createElement('div');
+                    card.className = 'livro-card';
+                    card.setAttribute('data-genero', (livro.genero || 'todos').toLowerCase());
+                    
+                    card.onclick = () => {
+                        localStorage.setItem('tituloParaLer', livro.titulo);
+                        window.location.href = 'leitura.html';
+                    };
+
+                    // CORREÇÃO DA LINHA 106: Fechamento de template literal
+card.innerHTML = `
+                        <div class="capa-container">
+                            <img src="${livro.capa}" alt="${livro.titulo}">
+                        </div>
+                        <div class="livro-info">
+                            <h3>${livro.titulo}</h3>
+                            <p>${livro.autor}</p>
+                            <small style="color: #bc9585">${livro.genero || ''}</small>
+                            <div class="barra-fundo">
+                                <div class="barra-progresso" style="width: ${livro.progresso || 0}%"></div>
+                            </div>
+                            <span style="font-size: 10px; color: #888;">${livro.progresso || 0}% lido</span>
+                        </div>`;
+                    estante.appendChild(card);
+                });
+            }
+        });
+
+        window.filtrarLivros = function() {
+            const termo = document.getElementById('input-pesquisa').value.toLowerCase();
+            const genero = document.getElementById('filtro-genero').value.toLowerCase();
+            document.querySelectorAll('.livro-card').forEach(card => {
+                const titulo = card.querySelector('h3').innerText.toLowerCase();
+                const bateTexto = titulo.includes(termo);
+                const bateGenero = genero === "todos" || card.getAttribute('data-genero') === genero;
+                card.style.display = (bateTexto && bateGenero) ? "flex" : "none";
+            });
+        };
+    </script>
+</body>
+</html>

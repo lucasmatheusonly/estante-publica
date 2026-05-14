@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lendo - Estante Pública</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background-color: #221f20; margin: 0; display: flex; }
+        .guia-marcacoes { width: 300px; background-color: #45322e; color: white; height: 100vh; padding: 20px; overflow-y: auto; border-right: 2px solid #bc9585; position: fixed; left: 0; }
+        .folha-leitura { background-color: #f4ecd8; flex-grow: 1; max-width: 800px; min-height: 100vh; padding: 60px 80px; margin-left: 300px; margin-right: auto; box-shadow: 0 0 50px rgba(0,0,0,0.5); font-family: 'Georgia', serif; line-height: 1.8; position: relative; }
+        .texto-conteudo { text-align: justify; color: #45322e; white-space: pre-wrap; font-size: 18px; }
+        .grifado { background-color: #bc958599; border-bottom: 2px solid #834d40; }
+        #menu-ferramentas { position: absolute; display: none; background: #45322e; padding: 8px; border-radius: 8px; z-index: 100; }
+        #menu-ferramentas button { background: #bc9585; border: none; padding: 5px 12px; cursor: pointer; border-radius: 4px; color: white; margin: 0 2px; font-weight: bold; }
+        
+        /* Barra visual de progresso no topo */
+        .progresso-container { position: fixed; top: 0; left: 300px; width: calc(100% - 300px); height: 5px; background: transparent; z-index: 1000; }
+        .progresso-barra { height: 100%; background: #834d40; width: 0%; transition: width 0.2s; }
+    </style>
+</head>
+<body>
+    <div class="progresso-container"><div class="progresso-barra" id="barra-topo"></div></div>
+
+    <div class="guia-marcacoes">
+        <h3>📖 Marcações</h3>
+        <div id="lista-marcacoes"></div>
+    </div>
+
+    <div class="folha-leitura">
+        <header>
+            <a href="index.html" style="text-decoration: none; color: #834d40; font-weight: bold;">← Voltar</a>
+            <h1 id="titulo-livro" style="font-size: 26px; color: #45322e; margin: 10px 0;">Carregando...</h1>
+            <p id="status-progresso" style="font-size: 12px; color: #834d40;">Progresso: 0%</p>
+        </header>
+
+        <div id="menu-ferramentas">
+            <button onclick="salvarMarcacao('grifo')">Grifar</button>
+            <button onclick="salvarMarcacao('comentario')">💬</button>
+        </div>
+
+        <div class="texto-conteudo" id="area-texto">Carregando conteúdo...</div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA_dfKpa7zNWkN4PANH0QTfqzj9j9Gujm0",
+            authDomain: "estante-publica.firebaseapp.com",
+            projectId: "estante-publica",
+            storageBucket: "estante-publica.firebasestorage.app",
+            messagingSenderId: "190769635660",
+            appId: "1:190769635660:web:1474f27911f45dbd17efe9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const tituloSalvo = localStorage.getItem('tituloParaLer');
+        const areaTexto = document.getElementById('area-texto');
+        const listaGuia = document.getElementById('lista-marcacoes');
+        
+        let ultimoProgressoSalvo = 0;
+
+        async function carregarLivro() {
+            if (!tituloSalvo) return;
+            document.getElementById('titulo-livro').innerText = tituloSalvo;
+
+            const q = query(collection(db, "livros"), where("titulo", "==", tituloSalvo));
+            const snap = await getDocs(q);
+            
+            if (!snap.empty) {
+                const dados = snap.docs[0].data();
+                areaTexto.innerText = dados.conteudo || "Texto não encontrado.";
+                ultimoProgressoSalvo = dados.progresso || 0;
+
+                if (dados.marcacoes) {
+listaGuia.innerHTML = "";
+                    let htmlTemporario = areaTexto.innerHTML;
+                    dados.marcacoes.forEach(m => {
+                        const item = document.createElement('div');
+                        item.className = 'item-guia';
+                        item.innerHTML = '<strong>' + m.tipo.toUpperCase() + '</strong><br>"' + m.texto.substring(0, 30) + '..."';
+                        listaGuia.appendChild(item);
+                        htmlTemporario = htmlTemporario.replace(m.texto, '<span class="grifado">' + m.texto + '</span>');
+                    });
+                    areaTexto.innerHTML = htmlTemporario;
+                }
+            }
+        }
+
+        // --- LÓGICA DE PROGRESSO AUTOMÁTICO ---
+        window.onscroll = function() {
+            const totalAltura = document.documentElement.scrollHeight - window.innerHeight;
+            const posicaoAtual = window.scrollY;
+            const porcentagem = Math.round((posicaoAtual / totalAltura) * 100);
+            
+            // Atualiza a barra visual
+            document.getElementById('barra-topo').style.width = porcentagem + "%";
+            document.getElementById('status-progresso').innerText = "Progresso: " + porcentagem + "%";
+
+            // Salva no Firebase apenas se subiu mais de 5% (para não sobrecarregar o banco)
+            if (porcentagem > ultimoProgressoSalvo + 5 || porcentagem === 100) {
+                salvarProgressoAutomatico(porcentagem);
+            }
+        };
+
+        async function salvarProgressoAutomatico(valor) {
+            const q = query(collection(db, "livros"), where("titulo", "==", tituloSalvo));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+                const ref = doc(db, "livros", snap.docs[0].id);
+                await updateDoc(ref, { progresso: valor });
+                ultimoProgressoSalvo = valor;
+                console.log("Progresso de " + valor + "% salvo automaticamente.");
+            }
+        }
+
+        window.salvarMarcacao = async function(tipo) {
+            const selecao = window.getSelection().toString().trim();
+            if (!selecao) return;
+            const nota = tipo === 'comentario' ? prompt("Nota:") : "";
+            const q = query(collection(db, "livros"), where("titulo", "==", tituloSalvo));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+                const ref = doc(db, "livros", snap.docs[0].id);
+                await updateDoc(ref, { marcacoes: arrayUnion({ texto: selecao, tipo: tipo, nota: nota }) });
+                location.reload();
+            }
+        };
+
+        carregarLivro();
+
+        document.addEventListener('mouseup', (e) => {
+            const menu = document.getElementById('menu-ferramentas');
+            if (window.getSelection().toString().length > 0) {
+                menu.style.display = "block";
+                menu.style.left = e.pageX + "px";
+                menu.style.top = (e.pageY - 50) + "px";
+            } else { menu.style.display = "none"; }
+        });
+    </script>
+</body>
+</html>
