@@ -41,11 +41,8 @@ position: relative;
 /* MEDIA QUERY PARA CELULAR */
 @media (max-width: 768px) {
 .guia-marcacoes {
-transform: translateX(-100%); /* Esconde a barra lateral */
-transition: transform 0.3s ease;
+display: none; /* Esconde a barra lateral no mobile para não cobrir o livro */
 }
-/* Se quiser mostrar a barra, precisaria de um botão,
-por enquanto vamos liberar o espaço do livro: */
 .folha-leitura {
 margin-left: 0;
 padding: 40px 20px;
@@ -112,16 +109,16 @@ let idLivroAtual = null;
 let ultimoProgressoSalvo = 0;
 
 onAuthStateChanged(auth, (user) => {
-if (user) {
-usuarioAtual = user;
+usuarioAtual = user; // Define o usuário (pode ser null se não logado)
 carregarLivroEProgresso();
-} else {
-window.location.href = "login.html";
+
+if (!user) {
+listaGuia.innerHTML = "<p style='font-size: 12px; color: #888;'>Faça login para salvar notas e progresso.</p>";
 }
 });
 
 async function carregarLivroEProgresso() {
-if (!tituloSalvo || !usuarioAtual) return;
+if (!tituloSalvo) return;
 document.getElementById('titulo-livro').innerText = tituloSalvo;
 
 const q = query(collection(db, "livros"), where("titulo", "==", tituloSalvo));
@@ -132,7 +129,8 @@ const docLivro = snap.docs[0];
 idLivroAtual = docLivro.id;
 areaTexto.innerText = docLivro.data().conteudo || "Conteúdo vazio.";
 
-// CORREÇÃO: Uso correto de Template Literals com crases
+// SÓ busca progresso se o usuário estiver LOGADO
+if (usuarioAtual) {
 const idDoc = `${usuarioAtual.uid}_${idLivroAtual}`;
 const qProg = query(collection(db, "usuarios_progresso"), where("uid", "==", usuarioAtual.uid), where("livroId", "==", idLivroAtual));
 const snapProg = await getDocs(qProg);
@@ -143,6 +141,7 @@ ultimoProgressoSalvo = dados.progresso || 0;
 document.getElementById('barra-topo').style.width = ultimoProgressoSalvo + "%";
 document.getElementById('status-progresso').innerText = "Lido: " + ultimoProgressoSalvo + "%";
 if (dados.marcacoes) renderizarMarcacoes(dados.marcacoes);
+}
 }
 } else {
 areaTexto.innerText = "Livro não encontrado no banco de dados.";
@@ -156,7 +155,6 @@ let textoOriginal = areaTexto.innerText;
 marcacoes.forEach(m => {
 const item = document.createElement('div');
 item.className = 'item-guia';
-// CORREÇÃO: Uso de crases aqui
 item.innerHTML = `<strong>${m.tipo.toUpperCase()}</strong><br>"${m.texto.substring(0, 40)}..."`;
 listaGuia.appendChild(item);
 textoOriginal = textoOriginal.split(m.texto).join(`<span class="grifado">${m.texto}</span>`);
@@ -170,7 +168,11 @@ if (total <= 0) return;
 const porcentagem = Math.round((window.scrollY / total) * 100);
 document.getElementById('barra-topo').style.width = porcentagem + "%";
 document.getElementById('status-progresso').innerText = "Lido: " + porcentagem + "%";
-if (porcentagem >= ultimoProgressoSalvo + 5 || porcentagem === 100) salvarProgressoAutomatico(porcentagem);
+
+// Salva progresso apenas se logado
+if (usuarioAtual && (porcentagem >= ultimoProgressoSalvo + 5 || porcentagem === 100)) {
+salvarProgressoAutomatico(porcentagem);
+}
 };
 
 async function salvarProgressoAutomatico(valor) {
@@ -186,7 +188,13 @@ ultimoProgressoSalvo = valor;
 
 window.salvarMarcacao = async function(tipo) {
 const selecao = window.getSelection().toString().trim();
-if (!selecao || !usuarioAtual || !idLivroAtual) return;
+if (!selecao || !idLivroAtual) return;
+
+if (!usuarioAtual) {
+alert("Você precisa estar logado para salvar marcações!");
+return;
+}
+
 const nota = tipo === 'comentario' ? prompt("Nota:") : "";
 const idDoc = `${usuarioAtual.uid}_${idLivroAtual}`;
 await setDoc(doc(db, "usuarios_progresso", idDoc), {
