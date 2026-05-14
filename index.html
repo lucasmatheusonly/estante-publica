@@ -78,7 +78,7 @@
         onAuthStateChanged(auth, (user) => {
             const userInfo = document.getElementById('user-info');
             const adminLink = document.getElementById('admin-link');
-            const meuEmail = "seu-email@gmail.com"; 
+            const meuEmail = "lumatheus.trabalho@gmail.com"; // AJUSTE PARA O SEU E-MAIL REAL
 
             if (user) {
                 usuarioAtual = user;
@@ -89,31 +89,32 @@
                 userInfo.innerHTML = `<a href="login.html">Entrar</a>`;
                 adminLink.style.display = "none";
             }
-            carregarLivros(); // Recarrega para mostrar o progresso do usuário logado
+            carregarLivros(); 
         });
 
-        function carregarLivros() {
+        async function carregarLivros() {
             onSnapshot(collection(db, "livros"), async (snapshot) => {
 if (estante) {
                     estante.innerHTML = "";
-                    
-                    // Usamos for...of para poder usar await dentro do loop
                     for (const docLivro of snapshot.docs) {
                         const livro = docLivro.data();
                         const idLivro = docLivro.id;
                         let progressoIndividual = 0;
 
-                        // Se houver usuário logado, busca o progresso dele para este livro
-                        if (usuarioAtual) {
-                            const q = query(
-                                collection(db, "usuarios_progresso"), 
-                                where("uid", "==", usuarioAtual.uid),
-                                where("livroId", "==", idLivro)
-                            );
-                            const snapProg = await getDocs(q);
-                            if (!snapProg.empty) {
-                                progressoIndividual = snapProg.docs[0].data().progresso || 0;
+                        try {
+                            if (usuarioAtual) {
+                                const q = query(
+                                    collection(db, "usuarios_progresso"), 
+                                    where("uid", "==", usuarioAtual.uid),
+                                    where("livroId", "==", idLivro)
+                                );
+                                const snapProg = await getDocs(q);
+                                if (!snapProg.empty) {
+                                    progressoIndividual = snapProg.docs[0].data().progresso || 0;
+                                }
                             }
+                        } catch (e) {
+                            console.error("Erro ao carregar progresso:", e);
                         }
 
                         const card = document.createElement('div');
@@ -149,15 +150,9 @@ if (estante) {
         window.filtrarLivros = function() {
             const termo = document.getElementById('input-pesquisa').value.toLowerCase().trim();
             const generoFiltro = document.getElementById('filtro-genero').value.toLowerCase();
-            
             document.querySelectorAll('.livro-card').forEach(card => {
-                const titulo = card.getAttribute('data-titulo');
-                const autor = card.getAttribute('data-autor');
-                const generoCard = card.getAttribute('data-genero');
-
-                const bateTexto = titulo.includes(termo) || autor.includes(termo);
-                const bateGenero = generoFiltro === "todos" || generoCard === generoFiltro;
-
+                const bateTexto = card.getAttribute('data-titulo').includes(termo) || card.getAttribute('data-autor').includes(termo);
+                const bateGenero = generoFiltro === "todos" || card.getAttribute('data-genero') === generoFiltro;
                 card.style.display = (bateTexto && bateGenero) ? "flex" : "none";
             });
         };
