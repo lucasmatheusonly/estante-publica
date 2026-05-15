@@ -1,62 +1,62 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Estante Pública - Início</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Estante Pública - Início</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header>
-<div class="logo">Estante Pública</div>
-<nav>
-<ul>
-<li><a href="index.html">Início</a></li>
-<li id="user-info"><a href="login.html">Entrar</a></li>
-<li id="admin-link" style="display: none;"><a href="admin.html" style="color: #bc9585; font-weight: bold;">+ Adicionar</a></li>
-</ul>
-</nav>
+    <div class="logo">Estante Pública</div>
+    <nav>
+        <ul>
+            <li><a href="index.html">Início</a></li>
+            <li id="user-info"><a href="login.html">Entrar</a></li>
+            <li id="admin-link" style="display: none;"><a href="admin.html" style="color: #bc9585; font-weight: bold;">+ Adicionar</a></li>
+        </ul>
+    </nav>
 </header>
 
 <main>
-<section class="hero">
-<div class="container">
-<h1>Sua biblioteca, seu mundo.</h1>
-<p>Leitura em qualquer lugar.</p>
-</div>
-</section>
+    <section class="hero">
+        <div class="container">
+            <h1>Sua biblioteca, seu mundo.</h1>
+            <p>Leitura em qualquer lugar.</p>
+        </div>
+    </section>
 
-<section class="container">
-<div class="controles-biblioteca">
-<input type="text" id="input-pesquisa" placeholder="Pesquisar título ou autor..." onkeyup="filtrarLivros()">
-<select id="filtro-genero" onchange="filtrarLivros()">
-<option value="todos">Todos os Gêneros</option>
-<option value="romance">Romance</option>
-<option value="ficcao">Ficção</option>
-<option value="fantasia">Fantasia</option>
-<option value="misterio">Mistério</option>
-<option value="terror">Terror</option>
-<option value="nacionais">Nacionais</option>
-<option value="estrangeiros">Estrangeiros</option>
-<option value="suspense">Suspense</option>
-<option value="biografia">Biografia</option>
-</select>
-</div>
-</section>
+    <section class="container">
+        <div class="controles-biblioteca">
+            <input type="text" id="input-pesquisa" placeholder="Pesquisar título ou autor..." onkeyup="filtrarLivros()">
+            <select id="filtro-genero" onchange="filtrarLivros()">
+                <option value="todos">Todos os Gêneros</option>
+                <option value="romance">Romance</option>
+                <option value="ficcao">Ficção</option>
+                <option value="fantasia">Fantasia</option>
+                <option value="misterio">Mistério</option>
+                <option value="terror">Terror</option>
+                <option value="nacionais">Nacionais</option>
+                <option value="estrangeiros">Estrangeiros</option>
+                <option value="suspense">Suspense</option>
+                <option value="biografia">Biografia</option>
+            </select>
+        </div>
+    </section>
 
-<section class="estante-privada">
-<div class="container">
-<h2>Minha Estante</h2>
-<div class="grade-livros" id="grade-livros">
-<p style="text-align: center; width: 100%;">Carregando estante...</p>
-</div>
-</div>
-</section>
+    <section class="estante-privada">
+        <div class="container">
+            <h2>Minha Estante</h2>
+            <div class="grade-livros" id="grade-livros">
+                <p style="text-align: center; width: 100%; color: #666;">Carregando estante...</p>
+            </div>
+        </div>
+    </section>
 </main>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -72,20 +72,25 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// 1. CARREGAR ESTANTE
+// 1. CARREGAR LIVROS IMEDIATAMENTE (TEMPO REAL)
 carregarEstanteRealTime();
 
-// 2. MONITOR DE LOGIN
+// 2. MONITORAR LOGIN E ATUALIZAR INTERFACE
 onAuthStateChanged(auth, (user) => {
     const userInfo = document.getElementById('user-info');
     if (user) {
-        userInfo.innerHTML = <span style="color:white; margin-right:10px;">${user.email.split('@')[0]}</span> <a href="#" onclick="fazerLogout()">Sair</a>;
+        // Mostra o nome do usuário e opção de sair
+        const nomeCurto = user.email.split('@')[0];
+        userInfo.innerHTML = <span style="color:#bc9585; font-weight:bold; margin-right:10px;">Olá, ${nomeCurto}</span> <a href="#" onclick="fazerLogout()">Sair</a>;
+        
+        // Recarrega a estante para buscar o progresso do usuário logado
+        carregarEstanteRealTime();
     } else {
         userInfo.innerHTML = <a href="login.html">Entrar</a>;
     }
 });
 
-// 3. FUNÇÃO QUE CARREGA LIVROS + BARRA DE PROGRESSO
+// 3. FUNÇÃO PRINCIPAL: BUSCAR LIVROS E PROGRESSO
 function carregarEstanteRealTime() {
     const grade = document.getElementById('grade-livros');
     if (!grade) return;
@@ -93,24 +98,27 @@ function carregarEstanteRealTime() {
     onSnapshot(collection(db, "livros"), (snapshot) => {
         grade.innerHTML = ""; 
 
+        if (snapshot.empty) {
+            grade.innerHTML = "<p style='text-align:center; width:100%;'>Nenhum livro disponível.</p>";
+            return;
+        }
+
         snapshot.forEach(async (livroDoc) => {
             const dados = livroDoc.data();
-            const livroId = livroDoc.id;
+const livroId = livroDoc.id;
             
-            // Criar o card do livro
             const livroCard = document.createElement('div');
             livroCard.className = 'livro-card';
             
-            // Lógica de clique
             livroCard.onclick = () => {
                 localStorage.setItem('tituloParaLer', dados.titulo);
                 window.location.href = 'leitura.html';
             };
 
-            // Criar o HTML básico do card
+            // Estrutura do Card com a Barra de Progresso
             livroCard.innerHTML = `
                 <div class="capa-container">
-                    <img src="${dados.capa || 'https://via.placeholder.com/150x200'}" alt="Capa">
+                    <img src="${dados.capa || 'https://via.placeholder.com/150x200?text=Sem+Capa'}" alt="Capa">
                 </div>
                 <div class="livro-info">
                     <h3>${dados.titulo}</h3>
@@ -122,22 +130,27 @@ function carregarEstanteRealTime() {
             `;
             grade.appendChild(livroCard);
 
-            // Buscar progresso se o usuário estiver logado
+            // BUSCAR PROGRESSO (SÓ SE ESTIVER LOGADO)
             if (auth.currentUser) {
-                const progRef = doc(db, "usuarios_progresso", `${auth.currentUser.uid}_${livroId}`);
-                const progSnap = await getDoc(progRef);
-                if (progSnap.exists()) {
-                    const perc = progSnap.data().porcentagem || 0;
-                    const barra = document.getElementById(`progresso-${livroId}`);
-                    if (barra) barra.style.width = perc + "%";
-                }
+                try {
+                    const progRef = doc(db, "usuarios_progresso", `${auth.currentUser.uid}_${livroId}`);
+                    const progSnap = await getDoc(progRef);
+                    if (progSnap.exists()) {
+                        const perc = progSnap.data().porcentagem || 0;
+                        const barra = document.getElementById(`progresso-${livroId}`);
+                        if (barra) barra.style.width = perc + "%";
+                    }
+                } catch (e) { console.error("Erro ao buscar progresso:", e); }
             }
         });
     });
 }
 
+// FUNÇÃO DE LOGOUT
 window.fazerLogout = function() {
-    signOut(auth).then(() => { window.location.reload(); });
+    signOut(auth).then(() => {
+        window.location.reload();
+    });
 };
 </script>
 </body>
