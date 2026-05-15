@@ -8,6 +8,26 @@
 <style>
 body { background-color: #221f20; margin: 0; display: flex; }
 
+/* Botão flutuante para mobile (Apenas visual aqui, o CSS principal deve estar no style.css) */
+#btn-menu-mobile {
+display: none;
+position: fixed;
+bottom: 25px;
+right: 25px;
+background: #bc9585;
+color: white;
+border: none;
+width: 60px;
+height: 60px;
+border-radius: 50%;
+z-index: 2000;
+box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+font-size: 24px;
+cursor: pointer;
+align-items: center;
+justify-content: center;
+}
+
 /* AJUSTE RESPONSIVO: A barra agora some no celular ou fica sobreposta */
 .guia-marcacoes {
 width: 300px;
@@ -22,6 +42,7 @@ left: 0;
 top: 0;
 box-sizing: border-box;
 z-index: 1001;
+transition: transform 0.3s ease; /* Para suavizar a abertura */
 }
 
 .folha-leitura {
@@ -40,9 +61,18 @@ position: relative;
 
 /* MEDIA QUERY PARA CELULAR */
 @media (max-width: 768px) {
+#btn-menu-mobile { display: flex; } /* Mostra o botão no mobile */
+
 .guia-marcacoes {
-display: none; /* Esconde a barra lateral no mobile para não cobrir o livro */
+transform: translateX(-100%); /* Esconde lateralmente */
 }
+
+/* Classe para abrir o menu no mobile */
+.guia-marcacoes.aberta {
+transform: translateX(0);
+display: block !important;
+}
+
 .folha-leitura {
 margin-left: 0;
 padding: 40px 20px;
@@ -64,6 +94,8 @@ width: 100% !important;
 </style>
 </head>
 <body>
+<button id="btn-menu-mobile" onclick="toggleMenu()">📖</button>
+
 <div class="progresso-container"><div class="progresso-barra" id="barra-topo"></div></div>
 <div class="guia-marcacoes" id="sidebar">
 <h3 style="color: #bc9585;">📖 Marcações</h3>
@@ -107,6 +139,12 @@ const listaGuia = document.getElementById('lista-marcacoes');
 let usuarioAtual = null;
 let idLivroAtual = null;
 let ultimoProgressoSalvo = 0;
+
+// Função para abrir/fechar menu no mobile
+window.toggleMenu = function() {
+const sidebar = document.getElementById('sidebar');
+sidebar.classList.toggle('aberta');
+};
 
 onAuthStateChanged(auth, (user) => {
 usuarioAtual = user; // Define o usuário (pode ser null se não logado)

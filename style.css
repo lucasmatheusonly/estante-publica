@@ -1,348 +1,396 @@
 /* --- Suas cores oficiais (Mantidas) --- */
 :root {
-    --fundo: #ffffff;
-    --bege: #bc9585;
-    --terracota: #834d40;
-    --madeira: #735e57;
-    --cafe: #45322e;
-    --preto: #221f20;
-    --papel-velho: #f4ecd8;
+--fundo: #ffffff;
+--bege: #bc9585;
+--terracota: #834d40;
+--madeira: #735e57;
+--cafe: #45322e;
+--preto: #221f20;
+--papel-velho: #f4ecd8;
 }
 
 /* --- Configurações Gerais (Mantidas) --- */
 body {
-    background-color: var(--fundo);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: var(--preto);
-    margin: 0;
-    padding: 0;
-    min-height: 100vh;
+background-color: var(--fundo);
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+color: var(--preto);
+margin: 0;
+padding: 0;
+min-height: 100vh;
 }
 
 header {
-    background-color: var(--cafe);
-    padding: 20px 5%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+background-color: var(--cafe);
+padding: 20px 5%;
+display: flex;
+justify-content: space-between;
+align-items: center;
+box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
 .logo {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: var(--bege);
-    text-decoration: none;
+font-size: 1.5rem;
+font-weight: bold;
+color: var(--bege);
+text-decoration: none;
 }
 
 nav ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    gap: 20px;
+list-style: none;
+padding: 0;
+margin: 0;
+display: flex;
+gap: 20px;
 }
 
 nav ul li a {
-    color: white;
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.3s;
+color: white;
+text-decoration: none;
+font-weight: 500;
+transition: color 0.3s;
 }
 
 nav ul li a:hover {
-    color: var(--bege);
+color: var(--bege);
 }
 
 .container {
-    max-width: 1200px;
-    width: 90%;
-    margin: 0 auto;
+max-width: 1200px;
+width: 90%;
+margin: 0 auto;
 }
 
 /* --- Seção Hero (Mantida) --- */
 .hero {
-    padding: 60px 0;
-    background-color: #fcfcfc;
-    border-bottom: 1px solid #eee;
+padding: 60px 0;
+background-color: #fcfcfc;
+border-bottom: 1px solid #eee;
 }
 
 .hero h1 {
-    font-size: 2.5rem;
-    color: var(--cafe);
-    margin-bottom: 10px;
+font-size: 2.5rem;
+color: var(--cafe);
+margin-bottom: 10px;
 }
 
 .hero p {
-    font-size: 1.2rem;
-    color: var(--madeira);
+font-size: 1.2rem;
+color: var(--madeira);
 }
 
 /* --- Barra de Busca e Filtros (Mantida) --- */
 .controles-biblioteca {
-    padding: 30px 0;
-    display: flex;
-    gap: 15px;
-    align-items: center;
+padding: 30px 0;
+display: flex;
+gap: 15px;
+align-items: center;
 }
 
 .controles-biblioteca input {
-    flex: 3;
-    padding: 12px 25px;
-    border: 2px solid var(--bege);
-    border-radius: 30px;
-    font-size: 1rem;
-    outline: none;
-    transition: border-color 0.3s;
+flex: 3;
+padding: 12px 25px;
+border: 2px solid var(--bege);
+border-radius: 30px;
+font-size: 1rem;
+outline: none;
+transition: border-color 0.3s;
 }
 
 .controles-biblioteca input:focus {
-    border-color: var(--terracota);
+border-color: var(--terracota);
 }
 
 #filtro-genero {
-    flex: 1;
-    padding: 12px 15px;
-    border: 2px solid var(--bege);
-    border-radius: 25px;
-    background-color: white;
-    color: var(--cafe);
-    cursor: pointer;
-    outline: none;
+flex: 1;
+padding: 12px 15px;
+border: 2px solid var(--bege);
+border-radius: 25px;
+background-color: white;
+color: var(--cafe);
+cursor: pointer;
+outline: none;
 }
 
 /* --- Grade de Livros e Cards (Mantida) --- */
 .estante-privada {
-    padding: 20px 0 60px 0;
+padding: 20px 0 60px 0;
 }
 
 .grade-livros {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 25px;
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+gap: 25px;
 }
 
 .livro-card {
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-    display: flex;
-    gap: 20px;
-    align-items: center;
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    border: 1px solid #f0f0f0;
+background: white;
+padding: 20px;
+border-radius: 12px;
+box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+display: flex;
+gap: 20px;
+align-items: center;
+cursor: pointer;
+transition: transform 0.2s, box-shadow 0.2s;
+border: 1px solid #f0f0f0;
 }
 
 .livro-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+transform: translateY(-5px);
+box-shadow: 0 8px 25px rgba(0,0,0,0.15);
 }
 
 .capa-container {
-    width: 90px;
-    height: 130px;
-    flex-shrink: 0;
-    border-radius: 6px;
-    overflow: hidden;
-    box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+width: 90px;
+height: 130px;
+flex-shrink: 0;
+border-radius: 6px;
+overflow: hidden;
+box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
 }
 
 .capa-container img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+width: 100%;
+height: 100%;
+object-fit: cover;
 }
 
 .livro-info {
-    flex-grow: 1;
+flex-grow: 1;
 }
 
 .livro-info h3 {
-    margin: 0 0 5px 0;
-    font-size: 1.1rem;
-    color: var(--cafe);
+margin: 0 0 5px 0;
+font-size: 1.1rem;
+color: var(--cafe);
 }
 
 .livro-info p {
-    margin: 0 0 8px 0;
-    color: #666;
-    font-size: 0.9rem;
+margin: 0 0 8px 0;
+color: #666;
+font-size: 0.9rem;
 }
 
 /* --- Barra de Progresso (Cards da Estante) --- */
 .barra-fundo {
-    background-color: #eeeeee;
-    height: 8px;
-    border-radius: 4px;
-    width: 100%;
-    margin-top: 10px;
-    overflow: hidden;
+background-color: #eeeeee;
+height: 8px;
+border-radius: 4px;
+width: 100%;
+margin-top: 10px;
+overflow: hidden;
 }
 
 .barra-progresso {
-    background-color: var(--terracota);
-    height: 100%;
-    width: 0%; 
-    transition: width 0.6s ease-in-out;
+background-color: var(--terracota);
+height: 100%;
+width: 0%;
+transition: width 0.6s ease-in-out;
 }
 
 /* --- TELA DE LOGIN (ESTILO COMPLETO) --- */
 .tela-login {
-    background-color: var(--cafe) !important;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    margin: 0;
+background-color: var(--cafe) !important;
+display: flex;
+justify-content: center;
+align-items: center;
+min-height: 100vh;
+margin: 0;
 }
 
 .login-card {
-    background-color: #ffffff;
-    padding: 40px;
-    border-radius: 15px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-    width: 100%;
-    max-width: 380px;
-    text-align: center;
+background-color: #ffffff;
+padding: 40px;
+border-radius: 15px;
+box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+width: 100%;
+max-width: 380px;
+text-align: center;
 }
 
 .btn-google {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    background: white;
-    cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 12px;
+width: 100%;
+padding: 12px;
+border: 1px solid #ddd;
+border-radius: 8px;
+background: white;
+cursor: pointer;
 font-weight: bold;
-    margin-top: 15px;
-    transition: background 0.3s;
+margin-top: 15px;
+transition: background 0.3s;
 }
 
 .btn-google:hover {
-    background: #f8f8f8;
+background: #f8f8f8;
 }
 
 .form-login {
-    text-align: left;
-    margin-top: 20px;
+text-align: left;
+margin-top: 20px;
 }
 
 .form-login label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 500;
-    color: var(--cafe);
+display: block;
+margin-bottom: 5px;
+font-weight: 500;
+color: var(--cafe);
 }
 
 .form-login input {
-    width: 100%;
-    padding: 12px;
-    margin-bottom: 15px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-sizing: border-box;
+width: 100%;
+padding: 12px;
+margin-bottom: 15px;
+border: 1px solid #ddd;
+border-radius: 8px;
+box-sizing: border-box;
 }
 
 .btn-entrar {
-    width: 100%;
-    padding: 14px;
-    background-color: var(--terracota);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: filter 0.3s;
+width: 100%;
+padding: 14px;
+background-color: var(--terracota);
+color: white;
+border: none;
+border-radius: 8px;
+font-weight: bold;
+cursor: pointer;
+transition: filter 0.3s;
 }
 
 .btn-entrar:hover {
-    filter: brightness(1.2);
+filter: brightness(1.2);
 }
 
 /* --- Página de Leitura (Sua Base com Novas Funcionalidades) --- */
 .pagina-livro, .folha-leitura {
-    background-color: var(--papel-velho);
-    color: #5d4037;
-    max-width: 800px;
-    margin: 0 auto;
-    margin-left: 350px; /* Espaço para o menu lateral fixo */
-    padding: 60px 80px;
-    min-height: 100vh;
-    box-shadow: 0 0 50px rgba(0, 0, 0, 0.15);
-    font-family: 'Georgia', serif;
-    line-height: 1.8;
-    position: relative;
+background-color: var(--papel-velho);
+color: #5d4037;
+max-width: 800px;
+margin: 0 auto;
+margin-left: 350px; /* Espaço para o menu lateral fixo */
+padding: 60px 80px;
+min-height: 100vh;
+box-shadow: 0 0 50px rgba(0, 0, 0, 0.15);
+font-family: 'Georgia', serif;
+line-height: 1.8;
+position: relative;
 }
 
 /* NOVA: Barra de Progresso Superior (Fixa durante o Scroll) */
 .progresso-container {
-    position: fixed;
-    top: 0;
-    left: 300px; /* Alinhado após o menu lateral */
-    width: calc(100% - 300px);
-    height: 5px;
-    background: rgba(0, 0, 0, 0.05);
-    z-index: 2000;
+position: fixed;
+top: 0;
+left: 300px; /* Alinhado após o menu lateral */
+width: calc(100% - 300px);
+height: 5px;
+background: rgba(0, 0, 0, 0.05);
+z-index: 2000;
 }
 
 .progresso-barra-fixa {
-    height: 100%;
-    background-color: var(--terracota);
-    width: 0%;
-    transition: width 0.1s linear;
+height: 100%;
+background-color: var(--terracota);
+width: 0%;
+transition: width 0.1s linear;
 }
 
 /* NOVO: Menu Lateral de Marcações */
 .guia-marcacoes {
-    width: 300px;
-    background-color: var(--cafe);
-    color: white;
-    height: 100vh;
-    padding: 20px;
-    position: fixed;
-    left: 0;
-    top: 0;
-    overflow-y: auto;
-    border-right: 2px solid var(--bege);
-    z-index: 1001;
+width: 300px;
+background-color: var(--cafe);
+color: white;
+height: 100vh;
+padding: 20px;
+position: fixed;
+left: 0;
+top: 0;
+overflow-y: auto;
+border-right: 2px solid var(--bege);
+z-index: 1001;
+transition: transform 0.3s ease; /* Para animação no mobile */
 }
 
 .item-guia {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 10px;
-    font-size: 13px;
-    border-left: 3px solid var(--bege);
+background: rgba(255, 255, 255, 0.1);
+padding: 10px;
+border-radius: 5px;
+margin-bottom: 10px;
+font-size: 13px;
+border-left: 3px solid var(--bege);
 }
 
 .grifado {
-    background-color: rgba(188, 149, 133, 0.5); /* Bege com transparência */
-    border-bottom: 2px solid var(--terracota);
+background-color: rgba(188, 149, 133, 0.5); /* Bege com transparência */
+border-bottom: 2px solid var(--terracota);
 }
 
 /* NOVO: Menu Flutuante (Grifar) */
 #menu-ferramentas {
-    position: absolute;
-    display: none;
-    background: var(--cafe);
-    padding: 8px;
-    border-radius: 8px;
-    z-index: 1500;
+position: absolute;
+display: none;
+background: var(--cafe);
+padding: 8px;
+border-radius: 8px;
+z-index: 1500;
 }
 
 #menu-ferramentas button {
-    background: var(--bege);
-    border: none;
-    padding: 5px 12px;
-    color: white;
-    cursor: pointer;
-    border-radius: 4px;
-    font-weight: bold;
+background: var(--bege);
+border: none;
+padding: 5px 12px;
+color: white;
+cursor: pointer;
+border-radius: 4px;
+font-weight: bold;
+}
+
+/* --- AJUSTES PARA MOBILE E BOTÃO FLUTUANTE (ADICIONADOS) --- */
+
+#btn-menu-mobile {
+display: none; /* Escondido no Desktop */
+position: fixed;
+bottom: 25px;
+right: 25px;
+background: var(--bege);
+color: white;
+border: none;
+width: 60px;
+height: 60px;
+border-radius: 50%;
+z-index: 2000;
+box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+font-size: 24px;
+cursor: pointer;
+align-items: center;
+justify-content: center;
+}
+
+@media (max-width: 768px) {
+#btn-menu-mobile { display: flex; }
+
+.guia-marcacoes {
+transform: translateX(-100%); /* Esconde fora da tela */
+width: 280px;
+}
+
+.guia-marcacoes.aberta {
+transform: translateX(0); /* Mostra o menu */
+box-shadow: 5px 0 20px rgba(0,0,0,0.6);
+}
+
+.pagina-livro, .folha-leitura {
+margin-left: 0 !important;
+padding: 40px 20px !important;
+width: 100% !important;
+box-sizing: border-box;
+}
+
+.progresso-container {
+left: 0 !important;
+width: 100% !important;
+}
 }
