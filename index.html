@@ -81,7 +81,7 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         // Mostra o nome do usuário e opção de sair
         const nomeCurto = user.email.split('@')[0];
-        userInfo.innerHTML = <span style="color:#bc9585; font-weight:bold; margin-right:10px;">Olá, ${nomeCurto}</span> <a href="#" onclick="fazerLogout()">Sair</a>;
+        userInfo.innerHTML = `<span style="color:#bc9585; font-weight:bold; margin-right:10px;">Olá, ${nomeCurto}</span>` `<a href="#" onclick="fazerLogout()">Sair</a>`;
         
         // Recarrega a estante para buscar o progresso do usuário logado
         carregarEstanteRealTime();
