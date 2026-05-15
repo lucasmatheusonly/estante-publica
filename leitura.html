@@ -120,6 +120,7 @@ const listaGuia = document.getElementById('lista-marcacoes');
 let usuarioAtual = null;
 let idLivroAtual = null;
 let marcacoesAtuais = [];
+let ultimoProgressoSalvo = 0;
 
 window.toggleMenu = function() {
 document.getElementById('sidebar').classList.toggle('aberta');
@@ -168,10 +169,43 @@ const idDoc = `${usuarioAtual.uid}_${idLivroAtual}`;
 
 try {
 const snap = await getDoc(doc(db, "usuarios_progresso", idDoc));
-marcacoesAtuais = (snap.exists() && snap.data().marcacoes) ? snap.data().marcacoes : [];
+if (snap.exists()) {
+marcacoesAtuais = snap.data().marcacoes || [];
+// Se houver progresso salvo, podemos rolar a página até ele (opcional)
+if (snap.data().porcentagem) {
+ultimoProgressoSalvo = snap.data().porcentagem;
+}
+}
 renderizarTudo();
 } catch (e) { console.error(e); }
 }
+
+// --- LOGICA DE PROGRESSO EM TEMPO REAL ---
+window.addEventListener('scroll', () => {
+if (!usuarioAtual || !idLivroAtual) return;
+
+// Calcula a porcentagem de rolagem
+const scrollTop = window.scrollY;
+const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+const progresso = Math.round((scrollTop / docHeight) * 100);
+
+// Salva apenas se o progresso mudar (evita chamadas excessivas ao Firebase)
+if (progresso !== ultimoProgressoSalvo && progresso >= 0 && progresso <= 100) {
+ultimoProgressoSalvo = progresso;
+salvarProgressoNoBanco(progresso);
+}
+});
+
+async function salvarProgressoNoBanco(valor) {
+const idDoc = `${usuarioAtual.uid}_${idLivroAtual}`;
+try {
+await setDoc(doc(db, "usuarios_progresso", idDoc), {
+porcentagem: valor,
+ultimaLeitura: new Date()
+}, { merge: true });
+} catch (e) { console.error("Erro ao salvar progresso:", e); }
+}
+// ------------------------------------------
 
 function renderizarTudo() {
 listaGuia.innerHTML = "";
