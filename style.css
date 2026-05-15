@@ -17,6 +17,8 @@ color: var(--preto);
 margin: 0;
 padding: 0;
 min-height: 100vh;
+/* Bloqueia seleção acidental fora da área de leitura no mobile */
+-webkit-tap-highlight-color: transparent;
 }
 
 header {
@@ -265,13 +267,13 @@ transition: filter 0.3s;
 filter: brightness(1.2);
 }
 
-/* --- Página de Leitura (Sua Base com Novas Funcionalidades) --- */
+/* --- Página de Leitura --- */
 .pagina-livro, .folha-leitura {
 background-color: var(--papel-velho);
 color: #5d4037;
 max-width: 800px;
 margin: 0 auto;
-margin-left: 350px; /* Espaço para o menu lateral fixo */
+margin-left: 350px;
 padding: 60px 80px;
 min-height: 100vh;
 box-shadow: 0 0 50px rgba(0, 0, 0, 0.15);
@@ -280,11 +282,21 @@ line-height: 1.8;
 position: relative;
 }
 
-/* NOVA: Barra de Progresso Superior (Fixa durante o Scroll) */
+.texto-conteudo {
+text-align: justify;
+color: #45322e;
+white-space: pre-wrap;
+font-size: 18px;
+/* Bloqueia o menu do sistema e o "copiar" no mobile */
+-webkit-touch-callout: none;
+user-select: text;
+}
+
+/* Barra de Progresso Superior */
 .progresso-container {
 position: fixed;
 top: 0;
-left: 300px; /* Alinhado após o menu lateral */
+left: 300px;
 width: calc(100% - 300px);
 height: 5px;
 background: rgba(0, 0, 0, 0.05);
@@ -298,7 +310,7 @@ width: 0%;
 transition: width 0.1s linear;
 }
 
-/* NOVO: Menu Lateral de Marcações */
+/* Menu Lateral de Marcações */
 .guia-marcacoes {
 width: 300px;
 background-color: var(--cafe);
@@ -311,53 +323,75 @@ top: 0;
 overflow-y: auto;
 border-right: 2px solid var(--bege);
 z-index: 1001;
-transition: transform 0.3s ease; /* Para animação no mobile */
+transition: transform 0.3s ease;
 }
 
+/* Itens do Menu Lateral (Grifos e Notas) */
 .item-guia {
 background: rgba(255, 255, 255, 0.1);
-padding: 10px;
-border-radius: 5px;
-margin-bottom: 10px;
+padding: 12px;
+border-radius: 8px;
+margin-bottom: 12px;
 font-size: 13px;
-border-left: 3px solid var(--bege);
+border-left: 4px solid var(--bege);
+position: relative; /* Para o botão excluir fixar nele */
 }
 
+.item-guia p {
+margin: 5px 0;
+line-height: 1.4;
+}
+
+/* BOTÃO DE EXCLUIR MARCAÇÃO */
+.btn-excluir {
+background: #ff4d4d;
+color: white;
+border: none;
+padding: 4px 8px;
+border-radius: 4px;
+cursor: pointer;
+font-size: 10px;
+margin-top: 8px;
+font-weight: bold;
+transition: opacity 0.2s;
+}
+
+.btn-excluir:hover {
+background: #cc0000;
+}
+
+/* GRIFO NO TEXTO (Aumentado contraste) */
 .grifado {
-background-color: rgba(188, 149, 133, 0.5); /* Bege com transparência */
-border-bottom: 2px solid var(--terracota);
+background-color: rgba(188, 149, 133, 0.7) !important;
+border-bottom: 2px solid var(--terracota) !important;
+display: inline !important;
 }
 
-/* NOVO: Menu Flutuante (Grifar) */
+/* Menu Flutuante de Grifar */
 #menu-ferramentas {
 position: absolute;
 display: none;
 background: var(--cafe);
 padding: 8px;
 border-radius: 8px;
-z-index: 3000; /* Aumentado para ficar sempre na frente */
-box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+z-index: 3000;
+box-shadow: 0 4px 15px rgba(0,0,0,0.5);
 }
 
 #menu-ferramentas button {
 background: var(--bege);
 border: none;
-padding: 5px 12px;
+padding: 6px 14px;
 color: white;
 cursor: pointer;
 border-radius: 4px;
 font-weight: bold;
-transition: filter 0.2s;
+margin: 0 2px;
 }
 
-#menu-ferramentas button:hover {
-filter: brightness(1.1);
-}
-
-/* --- AJUSTES PARA MOBILE E BOTÃO FLUTUANTE (ADICIONADOS) --- */
-
+/* AJUSTES MOBILE */
 #btn-menu-mobile {
-display: none; /* Escondido no Desktop */
+display: none;
 position: fixed;
 bottom: 25px;
 right: 25px;
@@ -379,12 +413,12 @@ justify-content: center;
 #btn-menu-mobile { display: flex; }
 
 .guia-marcacoes {
-transform: translateX(-100%); /* Esconde fora da tela */
+transform: translateX(-100%);
 width: 280px;
 }
 
 .guia-marcacoes.aberta {
-transform: translateX(0); /* Mostra o menu */
+transform: translateX(0);
 box-shadow: 5px 0 20px rgba(0,0,0,0.6);
 }
 
