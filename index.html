@@ -5,6 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Estante Pública - Início</title>
 <link rel="stylesheet" href="style.css">
+<style>
+/* Ajuste para o nome do usuário não quebrar o layout no mobile */
+#user-info {
+display: flex;
+align-items: center;
+gap: 10px;
+flex-wrap: nowrap;
+white-space: nowrap;
+}
+.nome-usuario {
+color: #bc9585;
+font-weight: bold;
+max-width: 120px; /* Limita o tamanho para não empurrar o menu */
+overflow: hidden;
+text-overflow: ellipsis;
+}
+</style>
 </head>
 <body>
 <header>
@@ -72,19 +89,22 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-carregarEstanteRealTime();
-
+// 1. Monitor de Login
 onAuthStateChanged(auth, (user) => {
 const userInfo = document.getElementById('user-info');
 if (user) {
-const nomeCurto = user.email.split('@')[0];
-userInfo.innerHTML = `<span style="color:#bc9585; font-weight:bold; margin-right:10px;">Olá, ${nomeCurto}</span>` +
+// Pega apenas a parte antes do @
+const nomeUsuario = user.email.split('@')[0];
+userInfo.innerHTML = `<span class="nome-usuario">Olá, ${nomeUsuario}</span>` +
 `<a href="#" onclick="fazerLogout(event)">Sair</a>`;
 } else {
 userInfo.innerHTML = `<a href="login.html">Entrar</a>`;
 }
+// Carrega a estante sempre que o estado do usuário mudar (para atualizar o progresso individual)
+carregarEstanteRealTime();
 });
 
+// 2. Função da Estante com Progresso Individual
 function carregarEstanteRealTime() {
 const grade = document.getElementById('grade-livros');
 if (!grade) return;
@@ -109,10 +129,9 @@ localStorage.setItem('tituloParaLer', dados.titulo);
 window.location.href = 'leitura.html';
 };
 
-// Adicionado o span "texto-progresso" para mostrar a porcentagem escrita
 livroCard.innerHTML = `
 <div class="capa-container">
-<img src="${dados.capa || 'https://via.placeholder.com/150x200?text=Sem+Capa'}" alt="Capa">
+<img src="${dados.capa || 'https://via.placeholder.com/150x200'}" alt="Capa">
 </div>
 <div class="livro-info">
 <h3>${dados.titulo}</h3>
@@ -127,16 +146,16 @@ livroCard.innerHTML = `
 `;
 grade.appendChild(livroCard);
 
+// Carrega o progresso específico deste usuário para este livro
 if (auth.currentUser) {
 try {
+// O ID do documento de progresso é: UID_LIVROID
 const progRef = doc(db, "usuarios_progresso", `${auth.currentUser.uid}_${livroId}`);
 const progSnap = await getDoc(progRef);
 if (progSnap.exists()) {
 const perc = Math.round(progSnap.data().porcentagem || 0);
-
 const barra = document.getElementById(`progresso-${livroId}`);
 const texto = document.getElementById(`porcentagem-${livroId}`);
-
 if (barra) barra.style.width = perc + "%";
 if (texto) texto.innerText = perc + "%";
 }
@@ -156,15 +175,10 @@ window.location.reload();
 window.filtrarLivros = function() {
 const termo = document.getElementById('input-pesquisa').value.toLowerCase();
 const cards = document.querySelectorAll('.livro-card');
-
 cards.forEach(card => {
 const titulo = card.querySelector('h3').innerText.toLowerCase();
 const autor = card.querySelector('p').innerText.toLowerCase();
-if (titulo.includes(termo) || autor.includes(termo)) {
-card.style.display = "flex";
-} else {
-card.style.display = "none";
-}
+card.style.display = (titulo.includes(termo) || autor.includes(termo)) ? "flex" : "none";
 });
 };
 </script>
