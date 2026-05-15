@@ -335,7 +335,8 @@ display: none;
 background: var(--cafe);
 padding: 8px;
 border-radius: 8px;
-z-index: 1500;
+z-index: 3000; /* Aumentado para ficar sempre na frente */
+box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
 
 #menu-ferramentas button {
@@ -346,6 +347,11 @@ color: white;
 cursor: pointer;
 border-radius: 4px;
 font-weight: bold;
+transition: filter 0.2s;
+}
+
+#menu-ferramentas button:hover {
+filter: brightness(1.1);
 }
 
 /* --- AJUSTES PARA MOBILE E BOTÃO FLUTUANTE (ADICIONADOS) --- */
