@@ -8,7 +8,6 @@
 <style>
 body { background-color: #221f20; margin: 0; display: flex; }
 
-/* Botão flutuante para mobile (Apenas visual aqui, o CSS principal deve estar no style.css) */
 #btn-menu-mobile {
 display: none;
 position: fixed;
@@ -28,7 +27,6 @@ align-items: center;
 justify-content: center;
 }
 
-/* AJUSTE RESPONSIVO: A barra agora some no celular ou fica sobreposta */
 .guia-marcacoes {
 width: 300px;
 background-color: #45322e;
@@ -42,7 +40,7 @@ left: 0;
 top: 0;
 box-sizing: border-box;
 z-index: 1001;
-transition: transform 0.3s ease; /* Para suavizar a abertura */
+transition: transform 0.3s ease;
 }
 
 .folha-leitura {
@@ -51,7 +49,7 @@ flex-grow: 1;
 max-width: 800px;
 min-height: 100vh;
 padding: 80px 60px;
-margin-left: 300px; /* Margem da barra lateral */
+margin-left: 300px;
 margin-right: auto;
 box-shadow: 0 0 50px rgba(0,0,0,0.5);
 font-family: 'Georgia', serif;
@@ -59,34 +57,17 @@ line-height: 1.8;
 position: relative;
 }
 
-/* MEDIA QUERY PARA CELULAR */
 @media (max-width: 768px) {
-#btn-menu-mobile { display: flex; } /* Mostra o botão no mobile */
-
-.guia-marcacoes {
-transform: translateX(-100%); /* Esconde lateralmente */
-}
-
-/* Classe para abrir o menu no mobile */
-.guia-marcacoes.aberta {
-transform: translateX(0);
-display: block !important;
-}
-
-.folha-leitura {
-margin-left: 0;
-padding: 40px 20px;
-width: 100%;
-}
-.progresso-container {
-left: 0 !important;
-width: 100% !important;
-}
+#btn-menu-mobile { display: flex; }
+.guia-marcacoes { transform: translateX(-100%); }
+.guia-marcacoes.aberta { transform: translateX(0); display: block !important; }
+.folha-leitura { margin-left: 0; padding: 40px 20px; width: 100%; }
+.progresso-container { left: 0 !important; width: 100% !important; }
 }
 
 .texto-conteudo { text-align: justify; color: #45322e; white-space: pre-wrap; font-size: 18px; }
 .grifado { background-color: rgba(188, 149, 133, 0.5); border-bottom: 2px solid #834d40; }
-.item-guia { background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 5px; margin-bottom: 10px; font-size: 13px; border-left: 3px solid #bc9585; }
+.item-guia { background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 5px; margin-bottom: 10px; font-size: 13px; border-left: 3px solid #bc9585; color: white; }
 #menu-ferramentas { position: absolute; display: none; background: #45322e; padding: 8px; border-radius: 8px; z-index: 3000; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
 #menu-ferramentas button { background: #bc9585; border: none; padding: 5px 12px; cursor: pointer; border-radius: 4px; color: white; margin: 0 2px; font-weight: bold; }
 .progresso-container { position: fixed; top: 0; left: 300px; width: calc(100% - 300px); height: 5px; background: rgba(0,0,0,0.05); z-index: 1000; }
@@ -117,7 +98,7 @@ width: 100% !important;
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, doc, setDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs, doc, setDoc, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -140,16 +121,14 @@ let usuarioAtual = null;
 let idLivroAtual = null;
 let ultimoProgressoSalvo = 0;
 
-// Função para abrir/fechar menu no mobile
 window.toggleMenu = function() {
 const sidebar = document.getElementById('sidebar');
 sidebar.classList.toggle('aberta');
 };
 
 onAuthStateChanged(auth, (user) => {
-usuarioAtual = user; // Define o usuário (pode ser null se não logado)
+usuarioAtual = user;
 carregarLivroEProgresso();
-
 if (!user) {
 listaGuia.innerHTML = "<p style='font-size: 12px; color: #888;'>Faça login para salvar notas e progresso.</p>";
 }
@@ -167,37 +146,38 @@ const docLivro = snap.docs[0];
 idLivroAtual = docLivro.id;
 areaTexto.innerText = docLivro.data().conteudo || "Conteúdo vazio.";
 
-// SÓ busca progresso se o usuário estiver LOGADO
 if (usuarioAtual) {
 const idDoc = `${usuarioAtual.uid}_${idLivroAtual}`;
-const qProg = query(collection(db, "usuarios_progresso"), where("uid", "==", usuarioAtual.uid), where("livroId", "==", idLivroAtual));
-const snapProg = await getDocs(qProg);
+const docRef = doc(db, "usuarios_progresso", idDoc);
+const snapProg = await getDoc(docRef);
 
-if (!snapProg.empty) {
-const dados = snapProg.docs[0].data();
+if (snapProg.exists()) {
+const dados = snapProg.data();
 ultimoProgressoSalvo = dados.progresso || 0;
 document.getElementById('barra-topo').style.width = ultimoProgressoSalvo + "%";
 document.getElementById('status-progresso').innerText = "Lido: " + ultimoProgressoSalvo + "%";
 if (dados.marcacoes) renderizarMarcacoes(dados.marcacoes);
 }
 }
-} else {
-areaTexto.innerText = "Livro não encontrado no banco de dados.";
 }
 }
 
 function renderizarMarcacoes(marcacoes) {
 listaGuia.innerHTML = "";
-let textoOriginal = areaTexto.innerText;
+let conteudoHTML = areaTexto.innerText;
 
 marcacoes.forEach(m => {
+// Adiciona no Menu Lateral
 const item = document.createElement('div');
 item.className = 'item-guia';
-item.innerHTML = `<strong>${m.tipo.toUpperCase()}</strong><br>"${m.texto.substring(0, 40)}..."`;
+const label = m.tipo === 'grifo' ? '📌 GRIFO' : '💬 NOTA';
+item.innerHTML = `<strong>${label}</strong><br>"${m.texto.substring(0, 50)}..." ${m.nota ? `<br><em>${m.nota}</em>` : ''}`;
 listaGuia.appendChild(item);
-textoOriginal = textoOriginal.split(m.texto).join(`<span class="grifado">${m.texto}</span>`);
+
+// Aplica o grifo visual no texto
+conteudoHTML = conteudoHTML.split(m.texto).join(`<span class="grifado">${m.texto}</span>`);
 });
-areaTexto.innerHTML = textoOriginal;
+areaTexto.innerHTML = conteudoHTML;
 }
 
 window.onscroll = function() {
@@ -206,8 +186,6 @@ if (total <= 0) return;
 const porcentagem = Math.round((window.scrollY / total) * 100);
 document.getElementById('barra-topo').style.width = porcentagem + "%";
 document.getElementById('status-progresso').innerText = "Lido: " + porcentagem + "%";
-
-// Salva progresso apenas se logado
 if (usuarioAtual && (porcentagem >= ultimoProgressoSalvo + 5 || porcentagem === 100)) {
 salvarProgressoAutomatico(porcentagem);
 }
@@ -225,25 +203,27 @@ ultimoProgressoSalvo = valor;
 }
 
 window.salvarMarcacao = async function(tipo) {
-const selecao = window.getSelection().toString().trim();
-if (!selecao || !idLivroAtual) return;
+const sel = window.getSelection();
+const textoSelecionado = sel.toString().trim();
+if (!textoSelecionado || !idLivroAtual) return;
 
 if (!usuarioAtual) {
-alert("Você precisa estar logado para salvar marcações!");
+alert("Faça login para salvar!");
 return;
 }
 
-const nota = tipo === 'comentario' ? prompt("Nota:") : "";
+const nota = tipo === 'comentario' ? prompt("Sua nota:") : "";
 const idDoc = `${usuarioAtual.uid}_${idLivroAtual}`;
+
 await setDoc(doc(db, "usuarios_progresso", idDoc), {
 uid: usuarioAtual.uid,
 livroId: idLivroAtual,
-marcacoes: arrayUnion({ texto: selecao, tipo: tipo, nota: nota })
+marcacoes: arrayUnion({ texto: textoSelecionado, tipo: tipo, nota: nota || "" })
 }, { merge: true });
+
 location.reload();
 };
 
-// LÓGICA DE SELEÇÃO MELHORADA (MOUSE E TOUCH)
 function gerenciarSelecao(e, isTouch = false) {
 const menu = document.getElementById('menu-ferramentas');
 const sel = window.getSelection();
@@ -252,17 +232,15 @@ const texto = sel.toString().trim();
 if (texto.length > 0) {
 const x = isTouch ? e.changedTouches[0].pageX : e.pageX;
 const y = isTouch ? e.changedTouches[0].pageY : e.pageY;
-
 menu.style.display = "block";
 menu.style.left = x + "px";
 menu.style.top = (y - 60) + "px";
 } else {
-// Delay para permitir o clique no botão antes de sumir
 setTimeout(() => {
 if (window.getSelection().toString().trim() === "") {
 menu.style.display = "none";
 }
-}, 150);
+}, 200);
 }
 }
 
