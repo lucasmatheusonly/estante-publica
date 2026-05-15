@@ -62,22 +62,52 @@ position: relative;
 .guia-marcacoes { transform: translateX(-100%); }
 .guia-marcacoes.aberta { transform: translateX(0); display: block !important; }
 .folha-leitura { margin-left: 0; padding: 40px 20px; width: 100%; }
-.progresso-container { left: 0 !important; width: 100% !important; }
 }
 
 .texto-conteudo { text-align: justify; color: #45322e; white-space: pre-wrap; font-size: 18px; }
-.grifado { background-color: rgba(188, 149, 133, 0.6) !important; border-bottom: 2px solid #834d40; display: inline; }
-.item-guia { background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; border-left: 4px solid #bc9585; color: #f4ecd8; }
-#menu-ferramentas { position: absolute; display: none; background: #45322e; padding: 8px; border-radius: 8px; z-index: 3000; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
-#menu-ferramentas button { background: #bc9585; border: none; padding: 5px 12px; cursor: pointer; border-radius: 4px; color: white; margin: 0 2px; font-weight: bold; }
-.progresso-container { position: fixed; top: 0; left: 300px; width: calc(100% - 300px); height: 5px; background: rgba(0,0,0,0.05); z-index: 1000; }
-.progresso-barra { height: 100%; background: #834d40; width: 0%; transition: width 0.2s ease-out; }
+
+/* ESTILO DO GRIFO */
+.grifado {
+background-color: rgba(188, 149, 133, 0.6) !important;
+border-bottom: 2px solid #834d40;
+display: inline;
+}
+
+.item-guia {
+background: rgba(255, 255, 255, 0.05);
+padding: 12px;
+border-radius: 8px;
+margin-bottom: 12px;
+font-size: 13px;
+border-left: 4px solid #bc9585;
+color: #f4ecd8;
+}
+
+#menu-ferramentas {
+position: absolute;
+display: none;
+background: #45322e;
+padding: 8px;
+border-radius: 8px;
+z-index: 3000;
+box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+#menu-ferramentas button {
+background: #bc9585;
+border: none;
+padding: 5px 12px;
+cursor: pointer;
+border-radius: 4px;
+color: white;
+font-weight: bold;
+}
 </style>
 </head>
 <body>
+
 <button id="btn-menu-mobile" onclick="toggleMenu()">📖</button>
 
-<div class="progresso-container"><div class="progresso-barra" id="barra-topo"></div></div>
 <div class="guia-marcacoes" id="sidebar">
 <h3 style="color: #bc9585; margin-bottom: 20px;">📖 Marcações</h3>
 <div id="lista-marcacoes">
@@ -89,12 +119,12 @@ position: relative;
 <header>
 <a href="index.html" style="text-decoration: none; color: #834d40; font-weight: bold;">← Voltar à Estante</a>
 <h1 id="titulo-livro" style="font-size: 26px; color: #45322e; margin: 15px 0;">Carregando...</h1>
-<p id="status-progresso" style="font-size: 13px; color: #834d40; font-weight: bold;">Lido: 0%</p>
 </header>
+
 <div id="menu-ferramentas">
 <button onclick="salvarMarcacao('grifo')">Grifar</button>
-<button onclick="salvarMarcacao('comentario')">💬 Nota</button>
 </div>
+
 <div class="texto-conteudo" id="area-texto">Buscando seu livro...</div>
 </div>
 
@@ -121,7 +151,6 @@ const listaGuia = document.getElementById('lista-marcacoes');
 
 let usuarioAtual = null;
 let idLivroAtual = null;
-let ultimoProgressoSalvo = 0;
 
 window.toggleMenu = function() {
 document.getElementById('sidebar').classList.toggle('aberta');
@@ -129,63 +158,71 @@ document.getElementById('sidebar').classList.toggle('aberta');
 
 onAuthStateChanged(auth, (user) => {
 usuarioAtual = user;
-carregarLivroEProgresso();
-if (!user) listaGuia.innerHTML = "<p style='color:#888; font-size:12px;'>Faça login para ver notas.</p>";
+if (user) {
+console.log("🛠️ DEBUG: Usuário logado:", user.uid);
+carregarLivro();
+} else {
+console.warn("🛠️ DEBUG: Usuário deslogado.");
+listaGuia.innerHTML = "<p style='color:#888; font-size:12px;'>Faça login para ver notas.</p>";
+}
 });
 
-async function carregarLivroEProgresso() {
-if (!tituloSalvo) return;
+async function carregarLivro() {
+if (!tituloSalvo) {
+console.error("🛠️ DEBUG: Título não encontrado no LocalStorage.");
+return;
+}
 document.getElementById('titulo-livro').innerText = tituloSalvo;
 
+try {
 const q = query(collection(db, "livros"), where("titulo", "==", tituloSalvo));
 const snap = await getDocs(q);
 
 if (!snap.empty) {
 const docLivro = snap.docs[0];
 idLivroAtual = docLivro.id;
-const conteudoOriginal = docLivro.data().conteudo || "Conteúdo vazio.";
-areaTexto.innerText = conteudoOriginal;
+console.log("🛠️ DEBUG: Livro ID encontrado:", idLivroAtual);
+areaTexto.innerText = docLivro.data().conteudo || "Conteúdo vazio.";
+buscarMarcacoes();
+} else {
+console.error("🛠️ DEBUG: Livro não encontrado no Firestore. Verifique o título exatamente como está no banco.");
+}
+} catch (e) {
+console.error("🛠️ DEBUG: Falha ao carregar livro:", e.message);
+}
+}
 
-if (usuarioAtual) {
+async function buscarMarcacoes() {
+if (!usuarioAtual || !idLivroAtual) return;
 const idDoc = `${usuarioAtual.uid}_${idLivroAtual}`;
-const snapProg = await getDoc(doc(db, "usuarios_progresso", idDoc));
 
-if (snapProg.exists()) {
-const dados = snapProg.data();
-if (dados.progresso) {
-ultimoProgressoSalvo = dados.progresso;
-document.getElementById('barra-topo').style.width = dados.progresso + "%";
-document.getElementById('status-progresso').innerText = "Lido: " + dados.progresso + "%";
-}
-if (dados.marcacoes && dados.marcacoes.length > 0) {
-renderizarMarcacoes(dados.marcacoes);
+try {
+const snap = await getDoc(doc(db, "usuarios_progresso", idDoc));
+if (snap.exists() && snap.data().marcacoes) {
+console.log("🛠️ DEBUG: Marcações encontradas:", snap.data().marcacoes.length);
+renderizarTudo(snap.data().marcacoes);
 } else {
+console.log("🛠️ DEBUG: Nenhuma marcação salva para este livro.");
 listaGuia.innerHTML = "<p style='color:#888; font-size:12px;'>Nenhuma nota ainda.</p>";
 }
-} else {
-listaGuia.innerHTML = "<p style='color:#888; font-size:12px;'>Nenhuma nota ainda.</p>";
-}
-}
+} catch (e) {
+console.error("🛠️ DEBUG: Erro ao buscar marcações:", e.message);
 }
 }
 
-function renderizarMarcacoes(marcacoes) {
+function renderizarTudo(marcacoes) {
 listaGuia.innerHTML = "";
 let textoAcumulado = areaTexto.innerText;
 
 marcacoes.forEach(m => {
-// 1. Adiciona na barra lateral
+// Menu lateral
 const div = document.createElement('div');
 div.className = 'item-guia';
-div.innerHTML = `
-<small style="color:#bc9585; font-weight:bold;">${m.tipo === 'grifo' ? '📌 GRIFO' : '💬 NOTA'}</small>
-<p style="margin:5px 0; color:#eee;">"${m.texto.substring(0,60)}..."</p>
-${m.nota ? `<p style="font-size:11px; color:#fff; background:rgba(0,0,0,0.2); padding:4px; border-radius:4px;"><strong>Obs:</strong> ${m.nota}</p>` : ''}
-`;
+div.innerHTML = `<small style="color:#bc9585; font-weight:bold;">📌 GRIFO</small><p style="margin:5px 0;">"${m.texto.substring(0,50)}..."</p>`;
 listaGuia.appendChild(div);
 
-// 2. Aplica o grifo no texto central (Split/Join para evitar erros de acentuação)
-if (m.texto && m.texto.length > 0) {
+// Aplica grifo visual
+if (m.texto && textoAcumulado.includes(m.texto)) {
 const partes = textoAcumulado.split(m.texto);
 textoAcumulado = partes.join(`<span class="grifado">${m.texto}</span>`);
 }
@@ -196,34 +233,34 @@ areaTexto.innerHTML = textoAcumulado;
 
 window.salvarMarcacao = async function(tipo) {
 const selecao = window.getSelection().toString().trim();
-if (!selecao || !idLivroAtual || !usuarioAtual) return;
+if (!selecao || !usuarioAtual || !idLivroAtual) {
+console.error("🛠️ DEBUG: Erro ao salvar. Seleção vazia ou falta de login/ID.");
+return;
+}
 
-const nota = tipo === 'comentario' ? prompt("Escreva sua nota:") : "";
 const idDoc = `${usuarioAtual.uid}_${idLivroAtual}`;
-
 try {
 await setDoc(doc(db, "usuarios_progresso", idDoc), {
 uid: usuarioAtual.uid,
 livroId: idLivroAtual,
-marcacoes: arrayUnion({ texto: selecao, tipo: tipo, nota: nota || "" })
+marcacoes: arrayUnion({ texto: selecao, tipo: tipo })
 }, { merge: true });
 
-// Atualiza a visualização imediatamente
-carregarLivroEProgresso();
+console.log("🛠️ DEBUG: Gravado no Firebase com sucesso!");
+buscarMarcacoes();
 document.getElementById('menu-ferramentas').style.display = "none";
 } catch (e) {
-console.error("Erro ao salvar:", e);
+console.error("🛠️ DEBUG: Erro ao gravar marcação:", e.message);
 }
 };
 
-function gerenciarSelecao(e, isTouch = false) {
+const gerenciarMenu = (e) => {
 const menu = document.getElementById('menu-ferramentas');
-const selecao = window.getSelection().toString().trim();
-
-if (selecao.length > 0) {
-const x = isTouch ? e.changedTouches[0].pageX : e.pageX;
-const y = isTouch ? e.changedTouches[0].pageY : e.pageY;
+const sel = window.getSelection().toString().trim();
+if (sel.length > 0) {
 menu.style.display = "block";
+const x = e.pageX || (e.changedTouches ? e.changedTouches[0].pageX : 0);
+const y = e.pageY || (e.changedTouches ? e.changedTouches[0].pageY : 0);
 menu.style.left = x + "px";
 menu.style.top = (y - 60) + "px";
 } else {
@@ -231,32 +268,11 @@ setTimeout(() => {
 if (window.getSelection().toString().trim() === "") menu.style.display = "none";
 }, 300);
 }
-}
-
-document.addEventListener('mouseup', (e) => gerenciarSelecao(e));
-document.addEventListener('touchend', (e) => gerenciarSelecao(e, true));
-
-window.onscroll = function() {
-const total = document.documentElement.scrollHeight - window.innerHeight;
-if (total <= 0) return;
-const porcentagem = Math.round((window.scrollY / total) * 100);
-document.getElementById('barra-topo').style.width = porcentagem + "%";
-document.getElementById('status-progresso').innerText = "Lido: " + porcentagem + "%";
-if (usuarioAtual && (porcentagem >= ultimoProgressoSalvo + 5 || porcentagem === 100)) {
-salvarProgressoAutomatico(porcentagem);
-}
 };
 
-async function salvarProgressoAutomatico(valor) {
-if (!usuarioAtual || !idLivroAtual) return;
-const idDoc = `${usuarioAtual.uid}_${idLivroAtual}`;
-await setDoc(doc(db, "usuarios_progresso", idDoc), {
-uid: usuarioAtual.uid,
-livroId: idLivroAtual,
-progresso: valor
-}, { merge: true });
-ultimoProgressoSalvo = valor;
-}
+document.addEventListener('mouseup', gerenciarMenu);
+document.addEventListener('touchend', gerenciarMenu);
+
 </script>
 </body>
 </html>
