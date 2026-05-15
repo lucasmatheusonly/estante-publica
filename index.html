@@ -6,20 +6,19 @@
 <title>Estante Pública - Início</title>
 <link rel="stylesheet" href="style.css">
 <style>
-/* Ajuste para o nome do usuário não quebrar o layout no mobile */
 #user-info {
 display: flex;
 align-items: center;
-gap: 10px;
+gap: 12px;
 flex-wrap: nowrap;
-white-space: nowrap;
 }
 .nome-usuario {
 color: #bc9585;
 font-weight: bold;
-max-width: 120px; /* Limita o tamanho para não empurrar o menu */
+max-width: 150px;
 overflow: hidden;
 text-overflow: ellipsis;
+white-space: nowrap;
 }
 </style>
 </head>
@@ -65,7 +64,7 @@ text-overflow: ellipsis;
 <div class="container">
 <h2>Minha Estante</h2>
 <div class="grade-livros" id="grade-livros">
-<p style="text-align: center; width: 100%; color: #666;">Carregando estante...</p>
+<p style="text-align: center; width: 100%; color: #666;">Carregando sua estante...</p>
 </div>
 </div>
 </section>
@@ -89,22 +88,22 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// 1. Monitor de Login
+// 1. Monitor de Login com Nome de Exibição
 onAuthStateChanged(auth, (user) => {
 const userInfo = document.getElementById('user-info');
 if (user) {
-// Pega apenas a parte antes do @
-const nomeUsuario = user.email.split('@')[0];
-userInfo.innerHTML = `<span class="nome-usuario">Olá, ${nomeUsuario}</span>` +
+// PRIORIDADE: 1. Nome de Exibição (Google/Perfil), 2. Nome antes do @
+const nomeParaExibir = user.displayName || user.email.split('@')[0];
+
+userInfo.innerHTML = `<span class="nome-usuario" title="${nomeParaExibir}">Olá, ${nomeParaExibir}</span>` +
 `<a href="#" onclick="fazerLogout(event)">Sair</a>`;
 } else {
 userInfo.innerHTML = `<a href="login.html">Entrar</a>`;
 }
-// Carrega a estante sempre que o estado do usuário mudar (para atualizar o progresso individual)
 carregarEstanteRealTime();
 });
 
-// 2. Função da Estante com Progresso Individual
+// 2. Função da Estante Real-Time
 function carregarEstanteRealTime() {
 const grade = document.getElementById('grade-livros');
 if (!grade) return;
@@ -146,10 +145,9 @@ livroCard.innerHTML = `
 `;
 grade.appendChild(livroCard);
 
-// Carrega o progresso específico deste usuário para este livro
+// Carrega o progresso individual (Vinculado ao UID da conta)
 if (auth.currentUser) {
 try {
-// O ID do documento de progresso é: UID_LIVROID
 const progRef = doc(db, "usuarios_progresso", `${auth.currentUser.uid}_${livroId}`);
 const progSnap = await getDoc(progRef);
 if (progSnap.exists()) {
@@ -159,7 +157,7 @@ const texto = document.getElementById(`porcentagem-${livroId}`);
 if (barra) barra.style.width = perc + "%";
 if (texto) texto.innerText = perc + "%";
 }
-} catch (e) { console.error("Erro ao buscar progresso:", e); }
+} catch (e) { console.error("Erro no progresso individual:", e); }
 }
 });
 });
