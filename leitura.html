@@ -6,7 +6,7 @@
 <title>Lendo - Estante Pública</title>
 <link rel="stylesheet" href="style.css">
 <style>
-/* Mantendo seu CSS original e adicionando apenas os reforços necessários */
+/* --- Estilos Mantidos --- */
 body { background-color: #221f20; margin: 0; display: flex; -webkit-tap-highlight-color: transparent; }
 
 #btn-menu-mobile {
@@ -54,7 +54,6 @@ margin-bottom: 12px; font-size: 13px; border-left: 4px solid #bc9585;
 color: #f4ecd8; position: relative;
 }
 
-/* Estilo do botão excluir no menu */
 .btn-excluir {
 background: #ff4d4d; color: white; border: none; padding: 2px 8px;
 border-radius: 4px; cursor: pointer; font-size: 10px; margin-top: 8px;
@@ -72,12 +71,14 @@ cursor: pointer; border-radius: 4px; color: white; font-weight: bold; margin: 0 
 }
 </style>
 </head>
-<body oncontextmenu="return false;"> <button id="btn-menu-mobile" onclick="toggleMenu()">📖</button>
+<body oncontextmenu="return false;">
+
+<button id="btn-menu-mobile" onclick="toggleMenu()">📖</button>
 
 <div class="guia-marcacoes" id="sidebar">
 <h3 style="color: #bc9585; margin-bottom: 20px;">📖 Marcações</h3>
 <div id="lista-marcacoes">
-<p style="font-size: 12px; color: #888;">Carregando notas...</p>
+<p style="font-size: 12px; color: #888;">Faça login para salvar notas.</p>
 </div>
 </div>
 
@@ -118,23 +119,32 @@ const listaGuia = document.getElementById('lista-marcacoes');
 
 let usuarioAtual = null;
 let idLivroAtual = null;
-let marcacoesAtuais = []; // Cache local para gerenciar exclusão
+let marcacoesAtuais = [];
 
 window.toggleMenu = function() {
 document.getElementById('sidebar').classList.toggle('aberta');
 };
 
+// 1. CARREGAR LIVRO IMEDIATAMENTE (Sem depender de login)
+carregarLivro();
+
+// 2. MONITORAR LOGIN (Apenas para habilitar recursos extras)
 onAuthStateChanged(auth, (user) => {
 usuarioAtual = user;
 if (user) {
-carregarLivro();
+console.log("Usuário logado, carregando marcações...");
+buscarMarcacoes();
 } else {
-listaGuia.innerHTML = "<p style='color:#888; font-size:12px;'>Faça login para ver notas.</p>";
+console.log("Visitante anônimo.");
+listaGuia.innerHTML = "<p style='color:#888; font-size:12px;'>Faça login para salvar suas marcações e progresso.</p>";
 }
 });
 
 async function carregarLivro() {
-if (!tituloSalvo) return;
+if (!tituloSalvo) {
+areaTexto.innerText = "Nenhum livro selecionado.";
+return;
+}
 document.getElementById('titulo-livro').innerText = tituloSalvo;
 
 try {
@@ -144,11 +154,15 @@ const snap = await getDocs(q);
 if (!snap.empty) {
 const docLivro = snap.docs[0];
 idLivroAtual = docLivro.id;
-window.conteudoPuro = docLivro.data().conteudo || ""; // Guardamos o texto original sem HTML
+window.conteudoPuro = docLivro.data().conteudo || "";
 areaTexto.innerText = window.conteudoPuro;
-buscarMarcacoes();
+
+// Se o usuário já estiver logado quando o livro carregar, busca as notas
+if (usuarioAtual) buscarMarcacoes();
+} else {
+areaTexto.innerHTML = `<p style="color:red;">Livro "${tituloSalvo}" não encontrado. Verifique o campo 'titulo' no banco.</p>`;
 }
-} catch (e) { console.error("Erro:", e); }
+} catch (e) { console.error(e); }
 }
 
 async function buscarMarcacoes() {
@@ -159,20 +173,14 @@ try {
 const snap = await getDoc(doc(db, "usuarios_progresso", idDoc));
 marcacoesAtuais = (snap.exists() && snap.data().marcacoes) ? snap.data().marcacoes : [];
 renderizarTudo();
-} catch (e) { console.error("Erro:", e); }
+} catch (e) { console.error(e); }
 }
 
 function renderizarTudo() {
 listaGuia.innerHTML = "";
-// SEMPRE começamos com o texto limpo para não grifar em cima de tags HTML existentes
 let textoParaProcessar = window.conteudoPuro;
 
-if (marcacoesAtuais.length === 0) {
-listaGuia.innerHTML = "<p style='color:#888; font-size:12px;'>Nenhuma nota ainda.</p>";
-}
-
 marcacoesAtuais.forEach((m, index) => {
-// Menu lateral com botão excluir
 const div = document.createElement('div');
 div.className = 'item-guia';
 const icone = m.tipo === 'grifo' ? '📌' : '💬';
@@ -184,7 +192,6 @@ ${m.nota ? `<p style="font-size:11px; opacity:0.8;">Obs: ${m.nota}</p>` : ''}
 `;
 listaGuia.appendChild(div);
 
-// Grifo visual (apenas se o texto existir no conteúdo)
 if (m.texto && textoParaProcessar.includes(m.texto)) {
 const partes = textoParaProcessar.split(m.texto);
 textoParaProcessar = partes.join(`<span class="grifado">${m.texto}</span>`);
@@ -195,8 +202,13 @@ areaTexto.innerHTML = textoParaProcessar;
 }
 
 window.salvarMarcacao = async function(tipo) {
+if (!usuarioAtual) {
+alert("Você precisa estar logado para salvar marcações!");
+return;
+}
+
 const selecao = window.getSelection().toString().trim();
-if (!selecao || !usuarioAtual || !idLivroAtual) return;
+if (!selecao || !idLivroAtual) return;
 
 let nota = "";
 if (tipo === 'comentario') {
@@ -217,14 +229,15 @@ marcacoes: marcacoesAtuais
 
 renderizarTudo();
 document.getElementById('menu-ferramentas').style.display = "none";
-window.getSelection().removeAllRanges(); // Limpa a seleção azul
-} catch (e) { console.error("Erro:", e); }
+window.getSelection().removeAllRanges();
+} catch (e) { console.error(e); }
 };
 
 window.excluirMarcacao = async function(index) {
+if (!usuarioAtual) return;
 if (!confirm("Deseja remover esta marcação?")) return;
 
-marcacoesAtuais.splice(index, 1); // Remove da lista local
+marcacoesAtuais.splice(index, 1);
 const idDoc = `${usuarioAtual.uid}_${idLivroAtual}`;
 
 try {
@@ -232,14 +245,13 @@ await updateDoc(doc(db, "usuarios_progresso", idDoc), {
 marcacoes: marcacoesAtuais
 });
 renderizarTudo();
-} catch (e) { console.error("Erro ao excluir:", e); }
+} catch (e) { console.error(e); }
 };
 
 const gerenciarMenu = (e) => {
 const menu = document.getElementById('menu-ferramentas');
 const sel = window.getSelection().toString().trim();
 
-// Garante que não abra o menu se selecionar algo dentro do menu lateral
 if (sel.length > 0 && !e.target.closest('#sidebar')) {
 menu.style.display = "block";
 const x = e.pageX || (e.changedTouches ? e.changedTouches[0].pageX : 0);
@@ -255,8 +267,6 @@ if (window.getSelection().toString().trim() === "") menu.style.display = "none";
 
 document.addEventListener('mouseup', gerenciarMenu);
 document.addEventListener('touchend', gerenciarMenu);
-
-// Bloqueia menu de contexto na área de texto
 areaTexto.addEventListener('contextmenu', (e) => e.preventDefault());
 
 </script>
