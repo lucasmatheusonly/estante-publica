@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Estante Pública - Início</title>
 <link rel="stylesheet" href="style.css">
 </head>
@@ -47,7 +47,7 @@
 <section class="estante-privada">
 <div class="container">
 <h2>Minha Estante</h2>
-<div class="grade-livros" id="estante-livros">
+<div class="grade-livros" id="grade-livros">
 <p style="text-align: center; width: 100%;">Carregando estante...</p>
 </div>
 </div>
@@ -71,108 +71,70 @@ appId: "1:190769635660:web:1474f27911f45dbd17efe9"
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-const estante = document.getElementById('estante-livros');
 
-let usuarioAtual = null;
+// 1. CARREGAR LIVROS IMEDIATAMENTE (Independente de login)
+carregarEstanteRealTime();
 
-// Função de Sair
-window.fazerLogout = function() {
-signOut(auth).then(() => {
-window.location.reload();
-}).catch((error) => {
-console.error("Erro ao sair:", error);
-});
-};
-
+// 2. MONITOR DE LOGIN
 onAuthStateChanged(auth, (user) => {
 const userInfo = document.getElementById('user-info');
 const adminLink = document.getElementById('admin-link');
-const meuEmail = "lumatheus.trabalho@gmail.com";
 
 if (user) {
-usuarioAtual = user;
-// Exibe nome e botão de sair
-userInfo.innerHTML = `
-<span style="color: white; font-size: 14px; margin-right: 10px;">Olá, ${user.displayName.split(' ')[0]}</span>
-<a href="#" onclick="fazerLogout()" style="color: #bc9585; font-size: 12px;">(Sair)</a>
-`;
+// Se estiver logado, mostra o e-mail e o botão sair
+userInfo.innerHTML = `<span style="color:white; margin-right:10px;">${user.email.split('@')[0]}</span> <a href="#" onclick="fazerLogout()">Sair</a>`;
 
-// Trava de Admin
-if (user.email === meuEmail) {
+// Se for o seu e-mail de admin, mostra o botão "+ Adicionar"
+if (user.email === "seu-email-admin@gmail.com") { // Coloque seu e-mail aqui
 adminLink.style.display = "inline-block";
-} else {
-adminLink.style.display = "none";
 }
 } else {
-usuarioAtual = null;
 userInfo.innerHTML = `<a href="login.html">Entrar</a>`;
 adminLink.style.display = "none";
 }
-carregarLivros();
 });
 
-async function carregarLivros() {
-onSnapshot(collection(db, "livros"), async (snapshot) => {
-if (estante) {
-estante.innerHTML = "";
-for (const docLivro of snapshot.docs) {
-const livro = docLivro.data();
-const idLivro = docLivro.id;
-let progressoIndividual = 0;
+// 3. FUNÇÃO DE BUSCA EM TEMPO REAL
+function carregarEstanteRealTime() {
+const grade = document.getElementById('grade-livros');
+if (!grade) return;
 
-try {
-if (usuarioAtual) {
-const q = query(
-collection(db, "usuarios_progresso"),
-where("uid", "==", usuarioAtual.uid),
-where("livroId", "==", idLivro)
-);
-const snapProg = await getDocs(q);
-if (!snapProg.empty) {
-progressoIndividual = snapProg.docs[0].data().progresso || 0;
-}
-}
-} catch (e) {
-console.error("Erro ao carregar progresso:", e);
+onSnapshot(collection(db, "livros"), (snapshot) => {
+grade.innerHTML = "";
+
+if (snapshot.empty) {
+grade.innerHTML = "<p>Nenhum livro disponível no momento.</p>";
+return;
 }
 
-const card = document.createElement('div');
-card.className = 'livro-card';
-card.setAttribute('data-genero', (livro.genero || 'todos').toLowerCase());
-card.setAttribute('data-autor', (livro.autor || '').toLowerCase());
-card.setAttribute('data-titulo', (livro.titulo || '').toLowerCase());
+snapshot.forEach((doc) => {
+const dados = doc.data();
+const livroCard = document.createElement('div');
+livroCard.className = 'livro-card';
 
-card.onclick = () => {
-localStorage.setItem('tituloParaLer', livro.titulo);
+livroCard.onclick = () => {
+localStorage.setItem('tituloParaLer', dados.titulo);
 window.location.href = 'leitura.html';
 };
 
-card.innerHTML = `
+livroCard.innerHTML = `
 <div class="capa-container">
-<img src="${livro.capa}" alt="${livro.titulo}">
+<img src="${dados.capa || 'https://via.placeholder.com/150x200?text=Sem+Capa'}" alt="Capa">
 </div>
 <div class="livro-info">
-<h3>${livro.titulo}</h3>
-<p>${livro.autor}</p>
-<small style="color: #bc9585; text-transform: capitalize;">${livro.genero || ''}</small>
-<div class="barra-fundo">
-<div class="barra-progresso" style="width: ${progressoIndividual}%"></div>
+<h3>${dados.titulo}</h3>
+<p>${dados.autor || 'Autor desconhecido'}</p>
 </div>
-<span style="font-size: 10px; color: #888;">${progressoIndividual}% lido</span>
-</div>`;
-estante.appendChild(card);
-}
-}
+`;
+grade.appendChild(livroCard);
+});
 });
 }
 
-window.filtrarLivros = function() {
-const termo = document.getElementById('input-pesquisa').value.toLowerCase().trim();
-const generoFiltro = document.getElementById('filtro-genero').value.toLowerCase();
-document.querySelectorAll('.livro-card').forEach(card => {
-const bateTexto = card.getAttribute('data-titulo').includes(termo) || card.getAttribute('data-autor').includes(termo);
-const bateGenero = generoFiltro === "todos" || card.getAttribute('data-genero') === generoFiltro;
-card.style.display = (bateTexto && bateGenero) ? "flex" : "none";
+// LOGOUT
+window.fazerLogout = function() {
+signOut(auth).then(() => {
+window.location.reload();
 });
 };
 </script>
