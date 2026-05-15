@@ -56,86 +56,88 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
-apiKey: "AIzaSyA_dfKpa7zNWkN4PANH0QTfqzj9j9Gujm0",
-authDomain: "estante-publica.firebaseapp.com",
-projectId: "estante-publica",
-storageBucket: "estante-publica.firebasestorage.app",
-messagingSenderId: "190769635660",
-appId: "1:190769635660:web:1474f27911f45dbd17efe9"
+    apiKey: "AIzaSyA_dfKpa7zNWkN4PANH0QTfqzj9j9Gujm0",
+    authDomain: "estante-publica.firebaseapp.com",
+    projectId: "estante-publica",
+    storageBucket: "estante-publica.firebasestorage.app",
+    messagingSenderId: "190769635660",
+    appId: "1:190769635660:web:1474f27911f45dbd17efe9"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// 1. CARREGAR LIVROS IMEDIATAMENTE (Independente de login)
+// 1. CARREGAR ESTANTE
 carregarEstanteRealTime();
 
 // 2. MONITOR DE LOGIN
 onAuthStateChanged(auth, (user) => {
-const userInfo = document.getElementById('user-info');
-const adminLink = document.getElementById('admin-link');
-
-if (user) {
-// Se estiver logado, mostra o e-mail e o botão sair
-userInfo.innerHTML = `<span style="color:white; margin-right:10px;">${user.email.split('@')[0]}</span> <a href="#" onclick="fazerLogout()">Sair</a>`;
-
-// Se for o seu e-mail de admin, mostra o botão "+ Adicionar"
-if (user.email === "seu-email-admin@gmail.com") { // Coloque seu e-mail aqui
-adminLink.style.display = "inline-block";
-}
-} else {
-userInfo.innerHTML = `<a href="login.html">Entrar</a>`;
-adminLink.style.display = "none";
-}
+    const userInfo = document.getElementById('user-info');
+    if (user) {
+        userInfo.innerHTML = <span style="color:white; margin-right:10px;">${user.email.split('@')[0]}</span> <a href="#" onclick="fazerLogout()">Sair</a>;
+    } else {
+        userInfo.innerHTML = <a href="login.html">Entrar</a>;
+    }
 });
 
-// 3. FUNÇÃO DE BUSCA EM TEMPO REAL
+// 3. FUNÇÃO QUE CARREGA LIVROS + BARRA DE PROGRESSO
 function carregarEstanteRealTime() {
-const grade = document.getElementById('grade-livros');
-if (!grade) return;
+    const grade = document.getElementById('grade-livros');
+    if (!grade) return;
 
-onSnapshot(collection(db, "livros"), (snapshot) => {
-grade.innerHTML = "";
+    onSnapshot(collection(db, "livros"), (snapshot) => {
+        grade.innerHTML = ""; 
 
-if (snapshot.empty) {
-grade.innerHTML = "<p>Nenhum livro disponível no momento.</p>";
-return;
+        snapshot.forEach(async (livroDoc) => {
+            const dados = livroDoc.data();
+            const livroId = livroDoc.id;
+            
+            // Criar o card do livro
+            const livroCard = document.createElement('div');
+            livroCard.className = 'livro-card';
+            
+            // Lógica de clique
+            livroCard.onclick = () => {
+                localStorage.setItem('tituloParaLer', dados.titulo);
+                window.location.href = 'leitura.html';
+            };
+
+            // Criar o HTML básico do card
+            livroCard.innerHTML = `
+                <div class="capa-container">
+                    <img src="${dados.capa || 'https://via.placeholder.com/150x200'}" alt="Capa">
+                </div>
+                <div class="livro-info">
+                    <h3>${dados.titulo}</h3>
+                    <p>${dados.autor || 'Autor desconhecido'}</p>
+                    <div class="barra-fundo">
+                        <div class="barra-progresso" id="progresso-${livroId}" style="width: 0%"></div>
+                    </div>
+                </div>
+            `;
+            grade.appendChild(livroCard);
+
+            // Buscar progresso se o usuário estiver logado
+            if (auth.currentUser) {
+                const progRef = doc(db, "usuarios_progresso", `${auth.currentUser.uid}_${livroId}`);
+                const progSnap = await getDoc(progRef);
+                if (progSnap.exists()) {
+                    const perc = progSnap.data().porcentagem || 0;
+                    const barra = document.getElementById(`progresso-${livroId}`);
+                    if (barra) barra.style.width = perc + "%";
+                }
+            }
+        });
+    });
 }
 
-snapshot.forEach((doc) => {
-const dados = doc.data();
-const livroCard = document.createElement('div');
-livroCard.className = 'livro-card';
-
-livroCard.onclick = () => {
-localStorage.setItem('tituloParaLer', dados.titulo);
-window.location.href = 'leitura.html';
-};
-
-livroCard.innerHTML = `
-<div class="capa-container">
-<img src="${dados.capa || 'https://via.placeholder.com/150x200?text=Sem+Capa'}" alt="Capa">
-</div>
-<div class="livro-info">
-<h3>${dados.titulo}</h3>
-<p>${dados.autor || 'Autor desconhecido'}</p>
-</div>
-`;
-grade.appendChild(livroCard);
-});
-});
-}
-
-// LOGOUT
 window.fazerLogout = function() {
-signOut(auth).then(() => {
-window.location.reload();
-});
+    signOut(auth).then(() => { window.location.reload(); });
 };
 </script>
 </body>
