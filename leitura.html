@@ -78,7 +78,7 @@ cursor: pointer; border-radius: 4px; color: white; font-weight: bold; margin: 0 
 <div class="guia-marcacoes" id="sidebar">
 <h3 style="color: #bc9585; margin-bottom: 20px;">📖 Marcações</h3>
 <div id="lista-marcacoes">
-<p style="font-size: 12px; color: #888;">Faça login para salvar notas.</p>
+<p style="font-size: 12px; color: #888;">Carregando notas...</p>
 </div>
 </div>
 
@@ -89,8 +89,8 @@ cursor: pointer; border-radius: 4px; color: white; font-weight: bold; margin: 0 
 </header>
 
 <div id="menu-ferramentas">
-<button onclick="salvarMarcacao('grifo')">Grifar</button>
-<button onclick="salvarMarcacao('comentario')">💬 Nota</button>
+<button onmousedown="event.preventDefault()" onclick="salvarMarcacao('grifo')">Grifar</button>
+<button onmousedown="event.preventDefault()" onclick="salvarMarcacao('comentario')">💬 Nota</button>
 </div>
 
 <div class="texto-conteudo" id="area-texto">Buscando seu livro...</div>
@@ -125,17 +125,15 @@ window.toggleMenu = function() {
 document.getElementById('sidebar').classList.toggle('aberta');
 };
 
-// 1. CARREGAR LIVRO IMEDIATAMENTE (Sem depender de login)
+// 1. CARREGAR LIVRO IMEDIATAMENTE
 carregarLivro();
 
-// 2. MONITORAR LOGIN (Apenas para habilitar recursos extras)
+// 2. MONITORAR LOGIN
 onAuthStateChanged(auth, (user) => {
 usuarioAtual = user;
 if (user) {
-console.log("Usuário logado, carregando marcações...");
 buscarMarcacoes();
 } else {
-console.log("Visitante anônimo.");
 listaGuia.innerHTML = "<p style='color:#888; font-size:12px;'>Faça login para salvar suas marcações e progresso.</p>";
 }
 });
@@ -157,10 +155,9 @@ idLivroAtual = docLivro.id;
 window.conteudoPuro = docLivro.data().conteudo || "";
 areaTexto.innerText = window.conteudoPuro;
 
-// Se o usuário já estiver logado quando o livro carregar, busca as notas
 if (usuarioAtual) buscarMarcacoes();
 } else {
-areaTexto.innerHTML = `<p style="color:red;">Livro "${tituloSalvo}" não encontrado. Verifique o campo 'titulo' no banco.</p>`;
+areaTexto.innerHTML = `<p style="color:red;">Livro "${tituloSalvo}" não encontrado. Verifique se o campo 'titulo' existe no banco.</p>`;
 }
 } catch (e) { console.error(e); }
 }
@@ -250,19 +247,19 @@ renderizarTudo();
 
 const gerenciarMenu = (e) => {
 const menu = document.getElementById('menu-ferramentas');
+// Timeout para garantir que a seleção mobile seja registrada pelo navegador
+setTimeout(() => {
 const sel = window.getSelection().toString().trim();
 
 if (sel.length > 0 && !e.target.closest('#sidebar')) {
 menu.style.display = "block";
-const x = e.pageX || (e.changedTouches ? e.changedTouches[0].pageX : 0);
-const y = e.pageY || (e.changedTouches ? e.changedTouches[0].pageY : 0);
-menu.style.left = x + "px";
-menu.style.top = (y - 60) + "px";
+const pointer = e.changedTouches ? e.changedTouches[0] : e;
+menu.style.left = pointer.pageX + "px";
+menu.style.top = (pointer.pageY - 80) + "px";
 } else {
-setTimeout(() => {
-if (window.getSelection().toString().trim() === "") menu.style.display = "none";
-}, 300);
+if (sel === "") menu.style.display = "none";
 }
+}, 150);
 };
 
 document.addEventListener('mouseup', gerenciarMenu);

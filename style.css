@@ -289,6 +289,7 @@ white-space: pre-wrap;
 font-size: 18px;
 /* Bloqueia o menu do sistema e o "copiar" no mobile */
 -webkit-touch-callout: none;
+-webkit-user-select: text; /* Adicionado para garantir seleção no Safari */
 user-select: text;
 }
 
@@ -354,6 +355,7 @@ font-size: 10px;
 margin-top: 8px;
 font-weight: bold;
 transition: opacity 0.2s;
+display: block; /* Garantir que fique em sua própria linha */
 }
 
 .btn-excluir:hover {
@@ -376,6 +378,7 @@ padding: 8px;
 border-radius: 8px;
 z-index: 3000;
 box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+pointer-events: auto; /* Garante que os botões recebam o clique */
 }
 
 #menu-ferramentas button {
