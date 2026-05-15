@@ -88,14 +88,17 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// 1. Monitor de Login com Nome de Exibição
+// 1. Monitor de Login com Lógica de Primeiro Nome
 onAuthStateChanged(auth, (user) => {
 const userInfo = document.getElementById('user-info');
 if (user) {
-// PRIORIDADE: 1. Nome de Exibição (Google/Perfil), 2. Nome antes do @
-const nomeParaExibir = user.displayName || user.email.split('@')[0];
+// Pega o DisplayName ou o e-mail
+const nomeCompleto = user.displayName || user.email.split('@')[0];
 
-userInfo.innerHTML = `<span class="nome-usuario" title="${nomeParaExibir}">Olá, ${nomeParaExibir}</span>` +
+// CORREÇÃO: Pega apenas a primeira palavra antes do espaço
+const primeiroNome = nomeCompleto.split(' ')[0];
+
+userInfo.innerHTML = `<span class="nome-usuario">Olá, ${primeiroNome}</span>` +
 `<a href="#" onclick="fazerLogout(event)">Sair</a>`;
 } else {
 userInfo.innerHTML = `<a href="login.html">Entrar</a>`;
@@ -103,7 +106,7 @@ userInfo.innerHTML = `<a href="login.html">Entrar</a>`;
 carregarEstanteRealTime();
 });
 
-// 2. Função da Estante Real-Time
+// 2. Função da Estante Real-Time (Progresso Individual)
 function carregarEstanteRealTime() {
 const grade = document.getElementById('grade-livros');
 if (!grade) return;
@@ -145,7 +148,6 @@ livroCard.innerHTML = `
 `;
 grade.appendChild(livroCard);
 
-// Carrega o progresso individual (Vinculado ao UID da conta)
 if (auth.currentUser) {
 try {
 const progRef = doc(db, "usuarios_progresso", `${auth.currentUser.uid}_${livroId}`);
