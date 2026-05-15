@@ -81,7 +81,7 @@ position: relative;
 <div class="guia-marcacoes" id="sidebar">
 <h3 style="color: #bc9585; margin-bottom: 20px;">📖 Marcações</h3>
 <div id="lista-marcacoes">
-<p style="font-size: 12px; color: #888;">Nenhuma nota ainda.</p>
+<p style="font-size: 12px; color: #888;">Carregando notas...</p>
 </div>
 </div>
 
@@ -124,16 +124,13 @@ let idLivroAtual = null;
 let ultimoProgressoSalvo = 0;
 
 window.toggleMenu = function() {
-const sidebar = document.getElementById('sidebar');
-sidebar.classList.toggle('aberta');
+document.getElementById('sidebar').classList.toggle('aberta');
 };
 
 onAuthStateChanged(auth, (user) => {
 usuarioAtual = user;
 carregarLivroEProgresso();
-if (!user) {
-listaGuia.innerHTML = "<p style='font-size: 12px; color: #888;'>Faça login para salvar notas.</p>";
-}
+if (!user) listaGuia.innerHTML = "<p style='color:#888; font-size:12px;'>Faça login para ver notas.</p>";
 });
 
 async function carregarLivroEProgresso() {
@@ -146,56 +143,98 @@ const snap = await getDocs(q);
 if (!snap.empty) {
 const docLivro = snap.docs[0];
 idLivroAtual = docLivro.id;
-areaTexto.innerText = docLivro.data().conteudo || "Conteúdo vazio.";
+const conteudoOriginal = docLivro.data().conteudo || "Conteúdo vazio.";
+areaTexto.innerText = conteudoOriginal;
 
 if (usuarioAtual) {
 const idDoc = `${usuarioAtual.uid}_${idLivroAtual}`;
-const docRef = doc(db, "usuarios_progresso", idDoc);
-const snapProg = await getDoc(docRef);
+const snapProg = await getDoc(doc(db, "usuarios_progresso", idDoc));
 
 if (snapProg.exists()) {
 const dados = snapProg.data();
-ultimoProgressoSalvo = dados.progresso || 0;
-document.getElementById('barra-topo').style.width = ultimoProgressoSalvo + "%";
-document.getElementById('status-progresso').innerText = "Lido: " + ultimoProgressoSalvo + "%";
-
+if (dados.progresso) {
+ultimoProgressoSalvo = dados.progresso;
+document.getElementById('barra-topo').style.width = dados.progresso + "%";
+document.getElementById('status-progresso').innerText = "Lido: " + dados.progresso + "%";
+}
 if (dados.marcacoes && dados.marcacoes.length > 0) {
 renderizarMarcacoes(dados.marcacoes);
+} else {
+listaGuia.innerHTML = "<p style='color:#888; font-size:12px;'>Nenhuma nota ainda.</p>";
 }
+} else {
+listaGuia.innerHTML = "<p style='color:#888; font-size:12px;'>Nenhuma nota ainda.</p>";
 }
 }
 }
 }
 
 function renderizarMarcacoes(marcacoes) {
-const lista = document.getElementById('lista-marcacoes');
-const display = document.getElementById('area-texto');
-lista.innerHTML = "";
-
-let textoHtml = display.innerText;
+listaGuia.innerHTML = "";
+let textoAcumulado = areaTexto.innerText;
 
 marcacoes.forEach(m => {
-// Criar item na barra lateral
+// 1. Adiciona na barra lateral
 const div = document.createElement('div');
 div.className = 'item-guia';
-const icone = m.tipo === 'grifo' ? '📌' : '💬';
 div.innerHTML = `
-<small style="color: #bc9585; font-weight: bold;">${icone} ${m.tipo.toUpperCase()}</small>
-<p style="margin: 5px 0; font-style: italic;">"${m.texto.substring(0, 60)}..."</p>
-${m.nota ? `<p style="margin: 0; color: #fff; font-size: 12px;"><strong>Nota:</strong> ${m.nota}</p>` : ''}
+<small style="color:#bc9585; font-weight:bold;">${m.tipo === 'grifo' ? '📌 GRIFO' : '💬 NOTA'}</small>
+<p style="margin:5px 0; color:#eee;">"${m.texto.substring(0,60)}..."</p>
+${m.nota ? `<p style="font-size:11px; color:#fff; background:rgba(0,0,0,0.2); padding:4px; border-radius:4px;"><strong>Obs:</strong> ${m.nota}</p>` : ''}
 `;
-lista.appendChild(div);
+listaGuia.appendChild(div);
 
-// Aplicar grifo no texto (Garante que substitui todas as vezes que a palavra aparece)
-if (m.texto) {
-const escapedText = m.texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const regex = new RegExp(escapedText, 'g');
-textoHtml = textoHtml.replace(regex, `<span class="grifado">${m.texto}</span>`);
+// 2. Aplica o grifo no texto central (Split/Join para evitar erros de acentuação)
+if (m.texto && m.texto.length > 0) {
+const partes = textoAcumulado.split(m.texto);
+textoAcumulado = partes.join(`<span class="grifado">${m.texto}</span>`);
 }
 });
 
-display.innerHTML = textoHtml;
+areaTexto.innerHTML = textoAcumulado;
 }
+
+window.salvarMarcacao = async function(tipo) {
+const selecao = window.getSelection().toString().trim();
+if (!selecao || !idLivroAtual || !usuarioAtual) return;
+
+const nota = tipo === 'comentario' ? prompt("Escreva sua nota:") : "";
+const idDoc = `${usuarioAtual.uid}_${idLivroAtual}`;
+
+try {
+await setDoc(doc(db, "usuarios_progresso", idDoc), {
+uid: usuarioAtual.uid,
+livroId: idLivroAtual,
+marcacoes: arrayUnion({ texto: selecao, tipo: tipo, nota: nota || "" })
+}, { merge: true });
+
+// Atualiza a visualização imediatamente
+carregarLivroEProgresso();
+document.getElementById('menu-ferramentas').style.display = "none";
+} catch (e) {
+console.error("Erro ao salvar:", e);
+}
+};
+
+function gerenciarSelecao(e, isTouch = false) {
+const menu = document.getElementById('menu-ferramentas');
+const selecao = window.getSelection().toString().trim();
+
+if (selecao.length > 0) {
+const x = isTouch ? e.changedTouches[0].pageX : e.pageX;
+const y = isTouch ? e.changedTouches[0].pageY : e.pageY;
+menu.style.display = "block";
+menu.style.left = x + "px";
+menu.style.top = (y - 60) + "px";
+} else {
+setTimeout(() => {
+if (window.getSelection().toString().trim() === "") menu.style.display = "none";
+}, 300);
+}
+}
+
+document.addEventListener('mouseup', (e) => gerenciarSelecao(e));
+document.addEventListener('touchend', (e) => gerenciarSelecao(e, true));
 
 window.onscroll = function() {
 const total = document.documentElement.scrollHeight - window.innerHeight;
@@ -218,55 +257,6 @@ progresso: valor
 }, { merge: true });
 ultimoProgressoSalvo = valor;
 }
-
-window.salvarMarcacao = async function(tipo) {
-const sel = window.getSelection();
-const textoStr = sel.toString().trim();
-if (!textoStr || !idLivroAtual) return;
-
-if (!usuarioAtual) {
-alert("Faça login para salvar!");
-return;
-}
-
-const nota = tipo === 'comentario' ? prompt("Sua nota:") : "";
-const idDoc = `${usuarioAtual.uid}_${idLivroAtual}`;
-
-try {
-await setDoc(doc(db, "usuarios_progresso", idDoc), {
-uid: usuarioAtual.uid,
-livroId: idLivroAtual,
-marcacoes: arrayUnion({ texto: textoStr, tipo: tipo, nota: nota || "" })
-}, { merge: true });
-
-location.reload();
-} catch (erro) {
-console.error("Erro ao salvar:", erro);
-}
-};
-
-function gerenciarSelecao(e, isTouch = false) {
-const menu = document.getElementById('menu-ferramentas');
-const texto = window.getSelection().toString().trim();
-
-if (texto.length > 0) {
-const x = isTouch ? e.changedTouches[0].pageX : e.pageX;
-const y = isTouch ? e.changedTouches[0].pageY : e.pageY;
-menu.style.display = "block";
-menu.style.left = x + "px";
-menu.style.top = (y - 60) + "px";
-} else {
-setTimeout(() => {
-if (window.getSelection().toString().trim() === "") {
-menu.style.display = "none";
-}
-}, 300);
-}
-}
-
-document.addEventListener('mouseup', (e) => gerenciarSelecao(e));
-document.addEventListener('touchend', (e) => gerenciarSelecao(e, true));
-
 </script>
 </body>
-</html> 
+</html>
